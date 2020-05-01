@@ -3,8 +3,8 @@ import Publisher from './publisher';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters } from './remoteParameters';
-import { Codec} from './codec';
-
+import { Codec } from './codec';
+import Sender from './sender';
 
 
 
@@ -13,6 +13,9 @@ class SessionEvent {
 
   };
   onclose() {
+
+  }
+  onsender(sender:Sender){
 
   }
 }
@@ -86,31 +89,30 @@ export default class Session extends SessionEvent {
       //   })
       // };
 
-      // this.publisher.ondtls = async dtlsParameters => {
-      //   await this.socket.request({
-      //     event: 'dtls',
-      //     data: {
-      //       transportId: this.publisher.id,
-      //       role: 'pub',
-      //       dtlsParameters
-      //     }
-      //   });
-      // };
+      this.publisher.ondtls = async (dtlsParameters) => {
+        await this.socket.request({
+          event: 'dtls',
+          data: {
+            transportId: this.publisher.id,
+            role: 'pub',
+            dtlsParameters
+          }
+        });
+      };
 
-      // this.publisher.onsender = async (sender) => {
-      //   const data = await this.socket.request({
-      //     event: 'publish',
-      //     data: {
-      //       transportId: this.publisher.id,
-      //       codec: sender.media.toCodec(),
-      //       metadata: sender.metadata
-      //     }
-      //   })
-      //   const { senderId } = data;
-      //   sender.senderId = senderId;
-      //   this.onsender(sender);
-
-      // }
+      this.publisher.onsender = async (sender) => {
+        const data = await this.socket.request({
+          event: 'publish',
+          data: {
+            transportId: this.publisher.id,
+            codec: sender.media.toCodec(),
+            metadata: sender.metadata
+          }
+        })
+        const { senderId } = data as { senderId: string };
+        sender.id = senderId;
+        this.onsender(sender);
+      }
 
       // //init pub
       // this.publisher.init();

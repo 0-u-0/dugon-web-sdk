@@ -7,7 +7,7 @@ const H264_CONSTRAINED_BASELINE = '42e01f'
 const H264_MAIN = '4d0032'
 const H264_HIGH = '640032'
 
-function objToStr(obj: { [key: string]: string }) {
+function objToStr(obj:[Str2StrDictionary]) {
   let arr = [];
   for (let k in obj) {
     arr.push(`${k}=${obj[k]}`)
@@ -40,6 +40,9 @@ export default class Media {
 
   }
 
+  get available() {
+    return this.direction != "inactive"
+  }
 
   toCodec() {
     return new Codec(this.type, this.payload, this.codecName, this.codecName, this.rate, this.channels,
@@ -48,7 +51,7 @@ export default class Media {
 
 
   //for send
-  static merge(media: any, codecCap: Codec, iceParameters: Str2StrDictionary, iceCandidates: [RemoteICECandidate]) {
+  static merge(media: any, codecCap: Codec, iceParameters: Str2StrDictionary, iceCandidates:  Array<RemoteICECandidate>) {
 
     //codecCap, ext should be merged
     let codec, channels,
@@ -215,95 +218,95 @@ export default class Media {
     return newMedia;
   }
 
-  // toSdp() {
-  //   let lines = [];
-  //   //var
-  //   let port = 0;
-  //   if (this.available || this.mid == '0') {
-  //     port = 7;
-  //   }
+  toSdp() {
+    let lines = [];
+    //var
+    let port = 0;
+    if (this.available || this.mid == '0') {
+      port = 7;
+    }
 
-  //   let mLine = `m=${this.type} ${port} ${this.protocol} ${this.payload}`;
-  //   if (this.rtx) {
-  //     mLine = mLine + ' ' + this.rtx.payload;
-  //   }
+    let mLine = `m=${this.type} ${port} ${this.protocol} ${this.payload}`;
+    if (this.rtx) {
+      mLine = mLine + ' ' + this.rtx.payload;
+    }
 
-  //   lines.push(mLine);
-  //   lines.push(`c=IN IP4 127.0.0.1`);
-  //   if (this.channels == 1) {
-  //     lines.push(`a=rtpmap:${this.payload} ${this.codecName}/${this.rate}`);
-  //   } else {
-  //     lines.push(`a=rtpmap:${this.payload} ${this.codecName}/${this.rate}/${this.channels}`);
-  //   }
+    lines.push(mLine);
+    lines.push(`c=IN IP4 127.0.0.1`);
+    if (this.channels == 1) {
+      lines.push(`a=rtpmap:${this.payload} ${this.codecName}/${this.rate}`);
+    } else {
+      lines.push(`a=rtpmap:${this.payload} ${this.codecName}/${this.rate}/${this.channels}`);
+    }
 
-  //   if (this.rtx) {
-  //     lines.push(`a=rtpmap:${this.rtx.payload} rtx/${this.rate}`);
-  //   }
+    if (this.rtx) {
+      lines.push(`a=rtpmap:${this.rtx.payload} rtx/${this.rate}`);
+    }
 
-  //   if (Object.keys(this.parameters).length > 0) {
-  //     lines.push(`a=fmtp:${this.payload} ${objToStr(this.parameters)}`);
-  //   }
+    if (Object.keys(this.parameters).length > 0) {
+      lines.push(`a=fmtp:${this.payload} ${objToStr(this.parameters)}`);
+    }
 
-  //   if (this.rtx) {
-  //     lines.push(`a=fmtp:${this.rtx.payload} apt=${this.payload}`);
-  //   }
+    if (this.rtx) {
+      lines.push(`a=fmtp:${this.rtx.payload} apt=${this.payload}`);
+    }
 
-  //   //rtcp-feedback
-  //   for (let rf of this.rtcpFb) {
-  //     let str = `${rf.type} ${rf.parameter}`.trim();
-  //     lines.push(`a=rtcp-fb:${this.payload} ${str}`);
-  //   }
+    //rtcp-feedback
+    for (let rf of this.rtcpFb) {
+      let str = `${rf.type} ${rf.parameter}`.trim();
+      lines.push(`a=rtcp-fb:${this.payload} ${str}`);
+    }
 
-  //   //extension
-  //   if (this.available) {
-  //     for (let e of this.extension) {
-  //       lines.push(`a=extmap:${e.id} ${e.uri}`);
-  //     }
-  //   }
+    //extension
+    if (this.available) {
+      for (let e of this.extension) {
+        lines.push(`a=extmap:${e.id} ${e.uri}`);
+      }
+    }
 
-  //   lines.push(`a=setup:${this.setup}`);
+    lines.push(`a=setup:${this.setup}`);
 
-  //   lines.push(`a=mid:${this.mid}`);
+    lines.push(`a=mid:${this.mid}`);
 
-  //   //send 
-  //   if (this.role === 'send') {
-  //     lines.push(`a=msid:${this.cname} ${this.msidAppdata}`);
-  //   }
+    //send 
+    if (this.role === 'send') {
+      lines.push(`a=msid:${this.cname} ${this.msidAppdata}`);
+    }
 
-  //   lines.push(`a=${this.direction}`);
+    lines.push(`a=${this.direction}`);
 
-  //   //ice 
-  //   lines.push(`a=ice-ufrag:${this.iceUfrag}`);
-  //   lines.push(`a=ice-pwd:${this.icePwd}`);
+    //ice 
+    lines.push(`a=ice-ufrag:${this.iceUfrag}`);
+    lines.push(`a=ice-pwd:${this.icePwd}`);
 
-  //   //TODO: use other direction
-  //   if (this.candidates.length > 0) {
-  //     for (let c of this.candidates) {
-  //       lines.push(`a=candidate:${c.foundation} ${c.component} ${c.transport} ${c.priority} ${c.ip} ${c.port} typ ${c.type}`);
-  //     }
-  //     lines.push(`a=end-of-candidates`);
-  //   }
+    //TODO: use other direction
+    if (this.candidates.length > 0) {
+      for (let c of this.candidates) {
+        lines.push(`a=candidate:${c.foundation} ${c.component} ${c.transport} ${c.priority} ${c.ip} ${c.port} typ ${c.type}`);
+      }
+      lines.push(`a=end-of-candidates`);
+    }
 
 
 
-  //   if (this.role === 'send') {
-  //     if (this.rtx) {
-  //       lines.push(`a=ssrc-group:FID ${this.ssrc} ${this.rtx.ssrc}`);
-  //     }
+    if (this.role === 'send') {
+      if (this.rtx) {
+        lines.push(`a=ssrc-group:FID ${this.ssrc} ${this.rtx.ssrc}`);
+      }
 
-  //     lines.push(`a=ssrc:${this.ssrc} cname:${this.cname}`);
-  //     if (this.rtx) {
-  //       lines.push(`a=ssrc:${this.rtx.ssrc} cname:${this.cname}`);
-  //     }
-  //   }
+      lines.push(`a=ssrc:${this.ssrc} cname:${this.cname}`);
+      if (this.rtx) {
+        lines.push(`a=ssrc:${this.rtx.ssrc} cname:${this.cname}`);
+      }
+    }
 
-  //   //TODO: renomination
-  //   lines.push(`a=ice-options:renomination`);
-  //   lines.push(`a=rtcp-mux`);
-  //   lines.push(`a=rtcp-rsize`);
+    //TODO: renomination
+    lines.push(`a=ice-options:renomination`);
+    lines.push(`a=rtcp-mux`);
+    lines.push(`a=rtcp-rsize`);
 
-  //   return lines.join('\r\n');
-  // }
+    return lines.join('\r\n');
+  }
 
 
   // static create(mid, codec, iceParameters, iceCandidates, receiverId) {
@@ -338,10 +341,6 @@ export default class Media {
   //   media.msidAppdata = receiverId;
 
   //   return media;
-  // }
-
-  // get available() {
-  //   return this.direction != "inactive"
   // }
 
 }

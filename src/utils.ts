@@ -1,3 +1,4 @@
+import { SessionDescription } from 'sdp-transform';
 
 
 function isNumber(x: any): x is number {
@@ -22,3 +23,22 @@ export function randomInitId(length: number) {
   return Math.ceil(randomNum * Math.pow(10, length));
 }
 
+export function getDtls(localSdpObj: SessionDescription) {
+  // console.log(JSON.stringify(localSdpObj));
+  for (let media of localSdpObj.media) {
+    if (media.fingerprint) {
+      const dtlsParameters =
+      {
+        setup: 'active',
+        fingerprint: {
+          algorithm: media.fingerprint.type,
+          value: media.fingerprint.hash
+        }
+      };
+
+      return dtlsParameters
+    }
+  }
+
+  return null;
+}
