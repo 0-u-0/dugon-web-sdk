@@ -6,14 +6,11 @@ import Sender from './sender';
 import Media from './media';
 import * as sdpTransform from 'sdp-transform';
 
-import { RemoteICECandidate, Str2StrDictionary } from './remoteParameters';
+import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { getDtls } from './utils';
 import Sdp from './sdp';
 
-interface DTLSparameter {
-  fingerprint: Str2StrDictionary;
-  setup: string;
-}
+
 
 export default class Publisher extends Transport {
   asyncQueue = new AsyncQueue()
@@ -26,7 +23,7 @@ export default class Publisher extends Transport {
   ondtls: ((dtls: DTLSparameter) => void) | null = null
   onunpublished: ((sender: Sender) => void) | null = null
 
-  constructor(id: string, remoteICECandidates: [RemoteICECandidate], remoteICEParameters: Str2StrDictionary, remoteDTLSParameters: Str2StrDictionary) {
+  constructor(id: string, remoteICECandidates: [RemoteICECandidate], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
 
   }

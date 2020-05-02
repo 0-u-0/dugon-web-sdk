@@ -1,5 +1,10 @@
-export interface Str2StrDictionary{
+export interface StrDic {
   [index: string]: string;
+}
+
+export type DTLSparameter = {
+  fingerprint: StrDic;
+  setup: string;
 }
 
 export interface RemoteICECandidate {
@@ -15,6 +20,6 @@ export interface RemoteICECandidate {
 export interface TransportParameters {
   id: string;
   iceCandidates: [RemoteICECandidate];
-  iceParameters: Str2StrDictionary;
-  dtlsParameters: Str2StrDictionary, 
+  iceParameters: StrDic;
+  dtlsParameters: StrDic,
 }

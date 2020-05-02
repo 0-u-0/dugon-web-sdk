@@ -1,5 +1,5 @@
 import { Codec, RTX, Extension, RtcpFeedback } from './codec';
-import { RemoteICECandidate, Str2StrDictionary } from './remoteParameters';
+import { RemoteICECandidate, StrDic } from './remoteParameters';
 import { MediaDescription } from 'sdp-transform';
 
 const H264_BASELINE = '42001f';
@@ -7,7 +7,7 @@ const H264_CONSTRAINED_BASELINE = '42e01f'
 const H264_MAIN = '4d0032'
 const H264_HIGH = '640032'
 
-function objToStr(obj:[Str2StrDictionary]) {
+function objToStr(obj: [StrDic]) {
   let arr = [];
   for (let k in obj) {
     arr.push(`${k}=${obj[k]}`)
@@ -23,7 +23,8 @@ export default class Media {
   port = 7
   setup: string = 'actpass'
   //TODO:  connection
-  connection: string = ''
+  connection: string = 'IN IP4 127.0.0.1';
+  protocol:string = 'UDP/TLS/RTP/SAVPF';
   //TODO: iceUfrag icePwd iceOptions
   iceUfrag: string = ''
   icePwd: string = ''
@@ -35,8 +36,8 @@ export default class Media {
   msidAppdata: string = ''
   constructor(public type: string, public direction: string, public codecName: string, public payload: number,
     public rate: number, public mid: string, public cname: string,
-    public channels = 1, public parameters: [Str2StrDictionary], public ssrc: number,
-    public rtcpFb: Array<RtcpFeedback>, public extension: Array<Extension>, public rtx: RTX| null, public protocol: string) {
+    public channels = 1, public parameters: [StrDic], public ssrc: number,
+    public rtcpFb: Array<RtcpFeedback>, public extension: Array<Extension>, public rtx: RTX | null) {
 
   }
 
@@ -51,7 +52,7 @@ export default class Media {
 
 
   //for send
-  static merge(media: any, codecCap: Codec, iceParameters: Str2StrDictionary, iceCandidates:  Array<RemoteICECandidate>) {
+  static merge(media: any, codecCap: Codec, iceParameters: StrDic, iceCandidates: Array<RemoteICECandidate>) {
 
     //codecCap, ext should be merged
     let codec, channels,
@@ -195,7 +196,7 @@ export default class Media {
     }
     //ssrc
 
-    let parameters = {} as [Str2StrDictionary];
+    let parameters = {} as [StrDic];
     if (fmtp) {
       let p1 = fmtp.split(';')
       for (let l of p1) {
@@ -209,7 +210,7 @@ export default class Media {
 
 
     let newMedia = new Media(media.type, direction, codec, payload, rate, media.mid!, cname, channels,
-      parameters, ssrc, rtcpFb, extension, rtx, media.protocol);
+      parameters, ssrc, rtcpFb, extension, rtx);
     newMedia.iceUfrag = iceParameters.usernameFragment;
     newMedia.icePwd = iceParameters.password;
     newMedia.candidates = iceCandidates;
@@ -309,38 +310,24 @@ export default class Media {
   }
 
 
-  // static create(mid, codec, iceParameters, iceCandidates, receiverId) {
-  //   let media = new Media();
-  //   media.role = 'send';
-  //   media.type = codec.kind;
-  //   media.mid = mid;
-  //   media.port = 0;
-  //   media.protocol = 'UDP/TLS/RTP/SAVPF';
-  //   media.connection = 'IN IP4 127.0.0.1';
-  //   //enable after subscribe
-  //   media.setup = 'actpass';
-  //   media.direction = 'inactive';
-  //   media.iceUfrag = iceParameters.usernameFragment;
-  //   media.icePwd = iceParameters.password;
-  //   //TODO: iceOptions
-  //   media.iceOptions = '';
-  //   media.codecName = codec.codecName;
-  //   media.rate = codec.clockRate;
-  //   media.channels = codec.channels;
-  //   media.parameters = codec.parameters;
-  //   media.payload = codec.payload;
-  //   media.ssrc = codec.ssrc;
-  //   media.rtx = codec.rtx;
-  //   media.rtcpFb = codec.rtcpFeedback;
-  //   media.extension = codec.extensions;
-  //   media.cname = codec.cname;
-  //   media.reducedSize = codec.reducedSize;
-  //   media.candidates = iceCandidates;
-  //   //https://tools.ietf.org/html/draft-ietf-mmusic-msid-17#page-5
-  //   // this will become trackId 
-  //   media.msidAppdata = receiverId;
+  static create(mid: string, codec: Codec, iceParameters: StrDic,
+    iceCandidates: RemoteICECandidate[], receiverId: string) {
+    let media = new Media(codec.kind, 'inactive', codec.codecName, codec.payload, codec.clockRate, codec.mid, codec.cname,
+      codec.channels, codec.parameters, codec.ssrc, codec.rtcpFeedback, codec.extensions, codec.rtx);
+    media.role = 'send';
+    //enable after subscribe
+    media.setup = 'actpass';
+    media.direction = 'inactive';
+    media.iceUfrag = iceParameters.usernameFragment;
+    media.icePwd = iceParameters.password;
+    //TODO: iceOptions
+    media.iceOptions = '';
+    media.candidates = iceCandidates;
+    //https://tools.ietf.org/html/draft-ietf-mmusic-msid-17#page-5
+    // this will become trackId 
+    media.msidAppdata = receiverId;
 
-  //   return media;
-  // }
+    return media;
+  }
 
 }

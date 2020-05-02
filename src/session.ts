@@ -2,24 +2,15 @@ import Socket from './socket';
 import Publisher from './publisher';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
-import { RemoteICECandidate, TransportParameters } from './remoteParameters';
+import { RemoteICECandidate, TransportParameters, StrDic } from './remoteParameters';
 import { Codec } from './codec';
 import Sender from './sender';
+import Subscriber from './subscriber';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
 
-class SessionEvent {
-  onin() {
 
-  };
-  onclose() {
-
-  }
-  onsender(sender: Sender) {
-
-  }
-}
 
 interface PublishOptions {
   simulcast: boolean,
@@ -28,15 +19,21 @@ interface PublishOptions {
 
 declare type CodecDic = { [key: string]: Codec }
 
-export default class Session extends SessionEvent {
+export default class Session {
   //TODO: add init state
   metadata: Metadata
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
-  publisher: Publisher | null = null;
+  publisher?: Publisher;
+  subscriber?: Subscriber;
+  //event
+  onclose: (() => void) | null = null;
+  onsender: ((sender: Sender) => void) | null = null;
+  onin: ((tokenId: string, metadata: StrDic) => void) | null = null;
+
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
-    super();
+
     stringChecker(this.url, 'url')
     stringChecker(this.sessionId, 'sessionId')
     stringChecker(this.tokenId, 'tokenId')
@@ -54,11 +51,14 @@ export default class Session extends SessionEvent {
     });
 
     this.socket.onclose = () => {
-      this.onclose();
+      if (this.onclose) {
+        this.onclose();
+      }
     };
 
     this.socket.onnotification = (event, data) => {
-      console.log(event, data)
+      this.handleNotification(event, data);
+
     }
 
     await this.socket.init();
@@ -104,8 +104,8 @@ export default class Session extends SessionEvent {
     }
   }
 
-  async unpublish(senderId:string) {
-    if(this.publisher){
+  async unpublish(senderId: string) {
+    if (this.publisher) {
       this.publisher.unpublish(senderId);
     }
   }
@@ -150,13 +150,102 @@ export default class Session extends SessionEvent {
         })
         const { senderId } = data as { senderId: string };
         sender.id = senderId;
-        this.onsender(sender);
+        if (this.onsender) {
+          this.onsender(sender);
+        }
       }
 
-      // //init pub
-      // this.publisher.init();
+    } else if (role === 'sub') {
+      this.subscriber = new Subscriber(id, iceCandidates, iceParameters, dtlsParameters);
+
+      this.subscriber.ondtls = async dtlsParameters => {
+        await this.socket!.request({
+          event: 'dtls',
+          data: {
+            transportId: this.subscriber!.id,
+            role: 'sub',
+            dtlsParameters
+          }
+        });
+      };
+
+      this.subscriber.ontrack = (track, receiver) => {
+        this.ontrack(track, receiver);
+      };
+
+      this.subscriber.onunsubscribed = receiver => {
+        this.onunreceiver(receiver);
+        this.socket!.request({
+          event: 'unsubscribe',
+          data: {
+            transportId: this.subscriber!.id,
+            senderId: receiver.senderId,
+          }
+        })
+      };
 
     }
   }
+
+  handleNotification(event: string, data: object) {
+    console.log('notification: ', event, data);
+    switch (event) {
+      case 'join': {
+        let { tokenId, metadata } = data as { tokenId: string, metadata: StrDic };
+        if (this.onin) {
+          this.onin(tokenId, metadata);
+        }
+        break;
+      };
+      case 'leave': {
+        let { tokenId } = data as { tokenId: string };
+        //TODO: release all receiver
+        // if (this.subscriber) {
+        //   this.subscriber.removeReceiverByTokenId(tokenId);
+        // }
+        // this.onout(tokenId);
+        // break;
+      };
+      case 'publish': {
+        // let { senderId, tokenId, metadata, codec, receiverId } = data;
+        // if (this.subscriber) {
+        //   let receiver = this.subscriber.addReceiver(senderId, tokenId, receiverId, codec, metadata);
+        //   this.onreceiver(receiver, tokenId, senderId, metadata);
+        // }
+
+        break;
+      };
+      case 'unpublish': {
+        // let { senderId, tokenId } = data;
+        // if (this.subscriber) {
+        //   this.subscriber.removeReceiver(senderId);
+        // }
+
+        break;
+      }
+      case 'pause': {
+        //FIXME: pause
+        // let { senderId } = data;
+        // if (this.subscriber) {
+        //   this.subscriber.removeReceiver(senderId);
+        // }
+
+        break;
+      }
+      case 'resume': {
+        //FIXME: pause
+        // let { senderId } = data;
+        // if (this.subscriber) {
+        //   this.subscriber.removeReceiver(senderId);
+        // }
+
+        break;
+      }
+      default: {
+        console.log('unknown event ', event);
+      }
+    }
+  }
+
 }
 
