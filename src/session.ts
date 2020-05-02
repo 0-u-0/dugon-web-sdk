@@ -2,10 +2,11 @@ import Socket from './socket';
 import Publisher from './publisher';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
-import { RemoteICECandidate, TransportParameters, StrDic } from './remoteParameters';
+import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
 import { Codec } from './codec';
 import Sender from './sender';
 import Subscriber from './subscriber';
+import Receiver from './receiver';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -30,7 +31,10 @@ export default class Session {
   onclose: (() => void) | null = null;
   onsender: ((sender: Sender) => void) | null = null;
   onin: ((tokenId: string, metadata: StrDic) => void) | null = null;
-
+  onout?: ((tokenId: string) => void);
+  ontrack?: ((track: MediaStreamTrack, receiver: Receiver) => void);
+  onunsubscribed?: ((receiver: Receiver) => void);
+  onreceiver?: ((receiver: Receiver, tokenId: string, senderId: string, metadata: StrDic) => void)
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
 
@@ -57,7 +61,7 @@ export default class Session {
     };
 
     this.socket.onnotification = (event, data) => {
-      this.handleNotification(event, data);
+      this.handleNotification(event, data as StrKeyDic);
 
     }
 
@@ -85,7 +89,7 @@ export default class Session {
 
   //TODO: simulcast config , metadata
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
-  async publish(track: MediaStreamTrack, { simulcast = false, codec }: PublishOptions = {
+  publish(track: MediaStreamTrack, { simulcast = false, codec }: PublishOptions = {
     simulcast: false, codec: null
   }) {
     if (!codec) {
@@ -104,12 +108,19 @@ export default class Session {
     }
   }
 
-  async unpublish(senderId: string) {
+  unpublish(senderId: string) {
     if (this.publisher) {
       this.publisher.unpublish(senderId);
     }
   }
 
+  subscribe(receiverId: string) {
+    if (this.subscriber) this.subscriber.subscribe(receiverId);
+  }
+
+  unsubscribe(receiverId:string){
+    if(this.subscriber) this.subscriber.unsubscribeByReceiverId(receiverId);
+  }
 
 
 
@@ -170,11 +181,11 @@ export default class Session {
       };
 
       this.subscriber.ontrack = (track, receiver) => {
-        this.ontrack(track, receiver);
+        if (this.ontrack) this.ontrack(track, receiver);
       };
 
       this.subscriber.onunsubscribed = receiver => {
-        this.onunreceiver(receiver);
+        if (this.onunsubscribed) this.onunsubscribed(receiver);
         this.socket!.request({
           event: 'unsubscribe',
           data: {
@@ -187,7 +198,7 @@ export default class Session {
     }
   }
 
-  handleNotification(event: string, data: object) {
+  private handleNotification(event: string, data: StrKeyDic) {
     console.log('notification: ', event, data);
     switch (event) {
       case 'join': {
@@ -200,26 +211,26 @@ export default class Session {
       case 'leave': {
         let { tokenId } = data as { tokenId: string };
         //TODO: release all receiver
-        // if (this.subscriber) {
-        //   this.subscriber.removeReceiverByTokenId(tokenId);
-        // }
-        // this.onout(tokenId);
-        // break;
+        if (this.subscriber) {
+          this.subscriber.unsubscribeByTokenId(tokenId);
+        }
+        if (this.onout) this.onout(tokenId);
+        break;
       };
       case 'publish': {
-        // let { senderId, tokenId, metadata, codec, receiverId } = data;
-        // if (this.subscriber) {
-        //   let receiver = this.subscriber.addReceiver(senderId, tokenId, receiverId, codec, metadata);
-        //   this.onreceiver(receiver, tokenId, senderId, metadata);
-        // }
+        let { senderId, tokenId, metadata, codec, receiverId } = data;
+        if (this.subscriber) {
+          let receiver = this.subscriber.addReceiver(senderId, tokenId, receiverId, codec, metadata);
+          if (this.onreceiver) this.onreceiver(receiver, tokenId, senderId, metadata);
+        }
 
         break;
       };
       case 'unpublish': {
-        // let { senderId, tokenId } = data;
-        // if (this.subscriber) {
-        //   this.subscriber.removeReceiver(senderId);
-        // }
+        let { senderId, tokenId } = data;
+        if (this.subscriber) {
+          this.subscriber.unsubscribeBySenderId(senderId);
+        }
 
         break;
       }

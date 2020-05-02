@@ -7,6 +7,10 @@ export type DTLSparameter = {
   setup: string;
 }
 
+export interface StrKeyDic{
+  [index: string]: any;
+}
+
 export interface RemoteICECandidate {
   foundation: string;
   ip: string;

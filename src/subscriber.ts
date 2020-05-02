@@ -26,10 +26,10 @@ export default class Subscriber extends Transport {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
   }
 
-  unsubscribe(tokenId: string) {
+  unsubscribeByTokenId(tokenId: string) {
     for (let receiver of this.receivers) {
       if (tokenId === receiver.tokenId) {
-        this.removeReceiver(receiver.senderId);
+        this.unsubscribeByReceiverId(receiver.id);
       }
     }
   }
@@ -67,7 +67,7 @@ export default class Subscriber extends Transport {
     const transceiver = await this.pc.getTransceivers().find(t => t.mid === receiver.mid);
     receiver.transceiver = transceiver;
 
-    
+
     if (this.ontrack) this.ontrack(transceiver!.receiver.track, receiver);
 
     //TODO: receiver resume
@@ -83,7 +83,14 @@ export default class Subscriber extends Transport {
 
   }
 
-  removeReceiver(receiverId: string) {
+  unsubscribeBySenderId(senderId: string) {
+    const receiver = this.receivers.find(r => r.senderId === senderId);
+    if (receiver) {
+      this.asyncQueue.push({ execObj: this, taskFunc: this._removeReceiver, parameters: [receiver] });
+    }
+  }
+
+  unsubscribeByReceiverId(receiverId: string) {
     const receiver = this.receivers.find(r => r.id === receiverId);
     if (receiver) {
       this.asyncQueue.push({ execObj: this, taskFunc: this._removeReceiver, parameters: [receiver] });
