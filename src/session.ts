@@ -220,7 +220,6 @@ export default class Session {
   }
 
   private handleNotification(event: string, data: StrKeyDic) {
-    console.log('notification: ', event, data);
     switch (event) {
       case 'join': {
         let { tokenId, metadata } = data as { tokenId: string, metadata: StrDic };

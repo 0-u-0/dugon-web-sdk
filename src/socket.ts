@@ -13,24 +13,14 @@ class Packet {
   }
 }
 
-function eventWarning(className: string, event: string) {
-  console.log(`${className}'${event} should be overrode`)
-}
-
-class SocketEvent {
-  onnotification(event: string, data: object) {
-    eventWarning('SocketEvent', 'onnotification')
-  }
-  onclose() {
-
-  }
-}
-
-export default class Socket extends SocketEvent {
+export default class Socket {
   messages: Map<number, Packet> = new Map();
   ws: WebSocket | null = null;
+
+  //event
+  onnotification?: ((event: string, data: object) => void);
+  onclose?: (() => void)
   constructor(public url: string, public params: object) {
-    super();
   }
 
   private getFullURL() {
@@ -56,12 +46,12 @@ export default class Socket extends SocketEvent {
         }
       } else if (method === 'notification') {
         let { event, data } = params;
-        this.onnotification(event, data);
+        if (this.onnotification) this.onnotification(event, data);
       }
     }
 
     this.ws.onclose = () => {
-      this.onclose();
+      if (this.onclose) this.onclose();
     }
 
     //TODO: error
@@ -98,7 +88,7 @@ export default class Socket extends SocketEvent {
   sendJSON(json: object) {
     try {
       let jsonString = JSON.stringify(json);
-      if(this.ws){
+      if (this.ws) {
         this.ws.send(jsonString)
       }
     } catch (e) {
