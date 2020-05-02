@@ -9,6 +9,7 @@ import * as sdpTransform from 'sdp-transform';
 import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { getDtls } from './utils';
 import Sdp from './sdp';
+import { Metadata } from './metadata';
 
 
 
@@ -28,8 +29,8 @@ export default class Publisher extends Transport {
 
   }
 
-  publish(track: MediaStreamTrack, codecCap: Codec) {
-    this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap] });
+  publish(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata) {
+    this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap, metadata] });
   }
 
   unpublish(senderId: string) {
@@ -52,18 +53,16 @@ export default class Publisher extends Transport {
     let remoteSdp = this.generateSdp();
     await this.pc.setRemoteDescription(remoteSdp);
 
-    if(this.onunpublished){
+    if (this.onunpublished) {
       this.onunpublished(sender);
     }
   }
 
-  private async _publishInternal(track: MediaStreamTrack, codecCap: Codec) {
+  private async _publishInternal(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata) {
     const transceiver = await this.pc.addTransceiver(track, {
       direction: 'sendonly',
     });
-    const sender = new Sender(track, transceiver, {
-      test: 'test'
-    });
+    const sender = new Sender(track, transceiver, metadata);
     this.senders.push(sender);
 
     try {

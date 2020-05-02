@@ -9,11 +9,23 @@ function isString(x: any): x is string {
   return typeof x === "string";
 }
 
+function isObject(x: any): x is object {
+  return typeof x === "object"
+}
+
 export function stringChecker(x: any, varName: string) {
   if (!isString(x)) {
     throw TypeError(`${varName} must be string.`)
   }
 }
+
+export function objectChecker(x: any, varName: string) {
+  if (!isString(x)) {
+    throw TypeError(`${varName} must be object.`)
+  }
+}
+
+
 
 export function randomInitId(length: number) {
   let randomNum = 0;

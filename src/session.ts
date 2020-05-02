@@ -13,15 +13,23 @@ const DEFAULT_AUDIO_CODEC = 'opus'
 
 
 
-interface PublishOptions {
-  simulcast: boolean,
-  codec: string | null
+type PublishOptions = {
+  simulcast?: boolean,
+  codec?: string,
+  metadata?: Metadata
 }
 
 declare type CodecDic = { [key: string]: Codec }
 
+enum SessionState {
+  New = "new",
+  Connecting = "connecting",
+  Connected = "connected",
+  Disconnected = "disconnected",
+}
+
 export default class Session {
-  //TODO: add init state
+  state: SessionState = SessionState.New;
   metadata: Metadata
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
@@ -38,91 +46,109 @@ export default class Session {
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
 
-    stringChecker(this.url, 'url')
-    stringChecker(this.sessionId, 'sessionId')
-    stringChecker(this.tokenId, 'tokenId')
-    metadataChecker(metadata)
+    stringChecker(this.url, 'url');
+    stringChecker(this.sessionId, 'sessionId');
+    stringChecker(this.tokenId, 'tokenId');
+    metadataChecker(metadata);
     this.metadata = metadata;
 
   }
 
   public async connect({ pub = false, sub = false } = { pub: true, sub: true }) {
+    if (SessionState.New === this.state) {
+      this.state = SessionState.Connecting;
 
-    this.socket = new Socket(this.url, {
-      'sessionId': this.sessionId,
-      'tokenId': this.tokenId,
-      'metadata': this.metadata,
-    });
+      this.socket = new Socket(this.url, {
+        'sessionId': this.sessionId,
+        'tokenId': this.tokenId,
+        'metadata': this.metadata,
+      });
 
-    this.socket.onclose = () => {
-      if (this.onclose) {
-        this.onclose();
+      this.socket.onclose = () => {
+        this.state = SessionState.Disconnected;
+
+        if (this.onclose) {
+          this.onclose();
+        }
+      };
+
+      this.socket.onnotification = (event, data) => {
+        this.handleNotification(event, data as StrKeyDic);
+
       }
-    };
 
-    this.socket.onnotification = (event, data) => {
-      this.handleNotification(event, data as StrKeyDic);
+      await this.socket.init();
 
-    }
+      const parameters = await this.socket.request({
+        event: 'join',
+        data: {
+          pub,
+          sub,
+        }
+      });
 
-    await this.socket.init();
-
-    const parameters = await this.socket.request({
-      event: 'join',
-      data: {
-        pub,
-        sub,
+      const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
+        codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
+      };
+      if (pub) {
+        this.initTransport('pub', pubParameters);
       }
-    });
+      if (sub) {
+        this.initTransport('sub', subParameters);
+      }
+      this.supportedCodecs = codecs;
 
-    const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
-      codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
-    };
-    if (pub) {
-      this.initTransport('pub', pubParameters);
+      //after pub & sub init
+      this.state = SessionState.Connected;
+
+    } else {
+      //TODO: warning
     }
-    if (sub) {
-      this.initTransport('sub', subParameters);
-    }
-    this.supportedCodecs = codecs;
   }
 
-  //TODO: simulcast config , metadata
+  //TODO: simulcast config 
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
-  publish(track: MediaStreamTrack, { simulcast = false, codec }: PublishOptions = {
-    simulcast: false, codec: null
+  publish(track: MediaStreamTrack, { simulcast = false, metadata = {}, codec }: PublishOptions = {
+    simulcast: false, metadata: {}
   }) {
-    if (!codec) {
-      if (track.kind == 'audio') {
-        codec = DEFAULT_AUDIO_CODEC;
-      } else {
-        codec = DEFAULT_VIDEO_CODEC;
-      }
-    }
+    //TODO: add track checker
+    if (SessionState.Connected != this.state) {
+      metadataChecker(metadata);
 
-    let codecCap = this.supportedCodecs![codec];
-    if (codecCap) {
-      this.publisher!.publish(track, codecCap);
+      if (!codec) {
+        if (track.kind == 'audio') {
+          codec = DEFAULT_AUDIO_CODEC;
+        } else {
+          codec = DEFAULT_VIDEO_CODEC;
+        }
+      }
+
+      let codecCap = this.supportedCodecs![codec];
+      if (codecCap) {
+        if (this.publisher) this.publisher.publish(track, codecCap, metadata);
+      } else {
+        //TODO: 
+      }
     } else {
-      //TODO: 
+      //TODO:
     }
   }
 
   unpublish(senderId: string) {
-    if (this.publisher) {
-      this.publisher.unpublish(senderId);
-    }
+    stringChecker(senderId, 'unpublish() senderId');
+    if (this.publisher) this.publisher.unpublish(senderId);
+
   }
 
   subscribe(receiverId: string) {
+    stringChecker(receiverId, 'subscribe() receiverId');
     if (this.subscriber) this.subscriber.subscribe(receiverId);
   }
 
-  unsubscribe(receiverId:string){
-    if(this.subscriber) this.subscriber.unsubscribeByReceiverId(receiverId);
+  unsubscribe(receiverId: string) {
+    stringChecker(receiverId, 'unsubscribe() receiverId');
+    if (this.subscriber) this.subscriber.unsubscribeByReceiverId(receiverId);
   }
-
-
 
   private initTransport(role: string, transportParameters: TransportParameters) {
     const { id, iceCandidates, iceParameters, dtlsParameters } = transportParameters;
