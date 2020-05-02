@@ -154,11 +154,11 @@ export default class Media {
 
 
     //codecCap, ext should be merged
-    let avaiableExt = codecCap.extensions.filter(ext => ext['recv']);
+    let availableExt = codecCap.extensions.filter(ext => ext['recv']);
 
     if (media.ext) {
       for (let e of media.ext) {
-        for (let ae of avaiableExt) {
+        for (let ae of availableExt) {
           if (e.uri == ae.uri) {
             let newExt = {
               'id': e.value,
@@ -312,7 +312,7 @@ export default class Media {
 
   static create(mid: string, codec: Codec, iceParameters: StrDic,
     iceCandidates: RemoteICECandidate[], receiverId: string) {
-    let media = new Media(codec.kind, 'inactive', codec.codecName, codec.payload, codec.clockRate, codec.mid, codec.cname,
+    let media = new Media(codec.kind, 'inactive', codec.codecName, codec.payload, codec.clockRate, mid, codec.cname,
       codec.channels, codec.parameters, codec.ssrc, codec.rtcpFeedback, codec.extensions, codec.rtx);
     media.role = 'send';
     //enable after subscribe
