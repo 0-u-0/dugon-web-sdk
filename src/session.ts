@@ -43,6 +43,7 @@ export default class Session {
   ontrack?: ((track: MediaStreamTrack, receiver: Receiver) => void);
   onunsubscribed?: ((receiver: Receiver) => void);
   onreceiver?: ((receiver: Receiver, tokenId: string, senderId: string, metadata: StrDic) => void)
+  onchange?: ((receiver: Receiver, isPaused: boolean) => void)
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
 
@@ -150,6 +151,68 @@ export default class Session {
     if (this.subscriber) this.subscriber.unsubscribeByReceiverId(receiverId);
   }
 
+  pause(id: string) {
+    stringChecker(id, 'pause() id');
+    let transportId = '';
+    let role = '';
+    let senderId = '';
+
+    if (this.subscriber) {
+      let receiver = this.subscriber.getReceiver(id);
+      if (receiver) {
+        transportId = this.subscriber.id;
+        role = 'sub';
+        senderId = receiver.senderId;
+      }
+    } else if (this.publisher) {
+      let sender = this.publisher.getSender(id);
+      if (sender) {
+        transportId = this.publisher.id;
+        role = 'pub';
+        senderId = sender.id;
+      }
+    }
+
+    if (transportId != '') {
+      this.request('pause', {
+        transportId,
+        senderId,
+        role
+      })
+    }
+  }
+
+  resume(id: string) {
+    stringChecker(id, 'resume() id');
+    let transportId = '';
+    let role = '';
+    let senderId = '';
+
+    if (this.subscriber) {
+      let receiver = this.subscriber.getReceiver(id);
+      if (receiver) {
+        transportId = this.subscriber.id;
+        role = 'sub';
+        senderId = receiver.senderId;
+      }
+    } else if (this.publisher) {
+      let sender = this.publisher.getSender(id);
+      if (sender) {
+        transportId = this.publisher.id;
+        role = 'pub';
+        senderId = sender.id;
+      }
+    }
+
+    if (transportId != '') {
+      this.request('resume', {
+        transportId,
+        senderId,
+        role
+      })
+    }
+  }
+
   private initTransport(role: string, transportParameters: TransportParameters) {
     const { id, iceCandidates, iceParameters, dtlsParameters } = transportParameters;
 
@@ -164,7 +227,7 @@ export default class Session {
       };
 
       this.publisher.ondtls = async (dtlsParameters) => {
-        this.request('dtls',{
+        this.request('dtls', {
           transportId: this.publisher!.id,
           role: 'pub',
           dtlsParameters
@@ -219,6 +282,22 @@ export default class Session {
     }
   }
 
+  private remotePubChange(senderId: string, changedState: 'pause' | 'resume') {
+    if (this.subscriber) {
+      let receiver = this.subscriber.getReceiverBySenderId(senderId);
+      if (receiver) {
+        if (changedState === 'pause') {
+          receiver.senderPaused = true;
+          if (this.onchange) this.onchange(receiver, true);
+        } else {
+          receiver.senderPaused = false;
+          if (this.onchange) this.onchange(receiver, false);
+        }
+      }
+    }
+
+  }
+
   private handleNotification(event: string, data: StrKeyDic) {
     switch (event) {
       case 'join': {
@@ -255,21 +334,13 @@ export default class Session {
         break;
       }
       case 'pause': {
-        //FIXME: pause
-        // let { senderId } = data;
-        // if (this.subscriber) {
-        //   this.subscriber.removeReceiver(senderId);
-        // }
-
+        let { senderId } = data;
+        this.remotePubChange(senderId, 'pause');
         break;
       }
       case 'resume': {
-        //FIXME: pause
-        // let { senderId } = data;
-        // if (this.subscriber) {
-        //   this.subscriber.removeReceiver(senderId);
-        // }
-
+        let { senderId } = data;
+        this.remotePubChange(senderId, 'resume');
         break;
       }
       default: {

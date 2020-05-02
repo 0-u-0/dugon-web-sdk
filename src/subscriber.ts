@@ -53,6 +53,14 @@ export default class Subscriber extends Transport {
     }
   }
 
+  getReceiver(id: string) {
+    return this.receivers.find(r => r.id === id);
+  }
+
+  getReceiverBySenderId(senderId: string) {
+    return this.receivers.find(r => r.senderId === senderId);
+  }
+
   async _subscribeInternal(receiver: Receiver) {
 
     receiver.media.direction = "sendonly";

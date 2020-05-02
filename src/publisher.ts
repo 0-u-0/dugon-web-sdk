@@ -40,6 +40,10 @@ export default class Publisher extends Transport {
     }
   }
 
+  getSender(id:string){
+    return this.senders.find(s=>s.id === id)
+  }
+
   private async _unpublishInternal(sender: Sender) {
     this.pc.removeTrack(sender.transceiver.sender);
 
