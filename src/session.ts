@@ -112,7 +112,7 @@ export default class Session {
     simulcast: false, metadata: {}
   }) {
     //TODO: add track checker
-    if (SessionState.Connected != this.state) {
+    if (SessionState.Connected === this.state) {
       metadataChecker(metadata);
 
       if (!codec) {
@@ -155,25 +155,20 @@ export default class Session {
 
     if (role === 'pub') {
       this.publisher = new Publisher(id, iceCandidates, iceParameters, dtlsParameters);
-      this.publisher.onunpublished = async senderId => {
-        await this.socket!.request({
-          event: 'unpublish',
-          data: {
-            transportId: this.publisher!.id,
-            senderId
-          }
+      this.publisher.onunpublished = async sender => {
+        this.request('unpublish', {
+          transportId: this.publisher!.id,
+          senderId: sender.id
         })
+        //FIXME: maybe add onunpublished in session
       };
 
       this.publisher.ondtls = async (dtlsParameters) => {
-        await this.socket!.request({
-          event: 'dtls',
-          data: {
-            transportId: this.publisher!.id,
-            role: 'pub',
-            dtlsParameters
-          }
-        });
+        this.request('dtls',{
+          transportId: this.publisher!.id,
+          role: 'pub',
+          dtlsParameters
+        })
       };
 
       this.publisher.onsender = async (sender) => {
@@ -282,6 +277,17 @@ export default class Session {
         console.log('unknown event ', event);
       }
     }
+  }
+
+  private async request(event: string, data: object) {
+    if (this.socket) {
+      return await this.socket.request({
+        event, data
+      })
+    } else {
+      //TODO: 
+    }
+    return null
   }
 
 }

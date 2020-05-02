@@ -9,6 +9,10 @@ export default class Receiver {
     public id: string, public codec: Codec, public metadata: StrDic, public media: Media) {
   }
 
+  get available(){
+    return this.media.available;
+  }
+
   get kind() {
     return this.codec.kind;
   }

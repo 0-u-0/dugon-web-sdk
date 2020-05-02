@@ -20,7 +20,7 @@ export function stringChecker(x: any, varName: string) {
 }
 
 export function objectChecker(x: any, varName: string) {
-  if (!isString(x)) {
+  if (!isObject(x)) {
     throw TypeError(`${varName} must be object.`)
   }
 }
