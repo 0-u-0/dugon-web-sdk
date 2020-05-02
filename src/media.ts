@@ -36,7 +36,7 @@ export default class Media {
   constructor(public type: string, public direction: string, public codecName: string, public payload: number,
     public rate: number, public mid: string, public cname: string,
     public channels = 1, public parameters: [Str2StrDictionary], public ssrc: number,
-    public rtcpFb: Array<RtcpFeedback>, public extension: Array<Extension>, public rtx: RTX, public protocol: string) {
+    public rtcpFb: Array<RtcpFeedback>, public extension: Array<Extension>, public rtx: RTX| null, public protocol: string) {
 
   }
 

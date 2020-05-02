@@ -4,7 +4,7 @@
     "module": "esnext",
     "strict": true,
     "allowJs":true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,

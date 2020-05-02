@@ -34,7 +34,7 @@ export default class Sdp {
 
   msidSemantic = ' WMS *';
 
-  fingerprint: Fingerprint
+  fingerprint: Fingerprint | null = null
 
   medias: Array<Media> = []
   constructor() {

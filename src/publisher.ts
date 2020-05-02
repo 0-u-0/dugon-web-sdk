@@ -10,9 +10,9 @@ import { RemoteICECandidate, Str2StrDictionary } from './remoteParameters';
 import { getDtls } from './utils';
 import Sdp from './sdp';
 
-interface DTLSparameter{
-  fingerprint:Str2StrDictionary;
-  setup:string;
+interface DTLSparameter {
+  fingerprint: Str2StrDictionary;
+  setup: string;
 }
 
 export default class Publisher extends Transport {
@@ -23,7 +23,8 @@ export default class Publisher extends Transport {
   usedMids: string[] = []
   //----- event
   onsender: ((sender: Sender) => void) | null = null
-  ondtls:  ((dtls: DTLSparameter) => void) | null = null
+  ondtls: ((dtls: DTLSparameter) => void) | null = null
+  onunpublished: ((sender: Sender) => void) | null = null
 
   constructor(id: string, remoteICECandidates: [RemoteICECandidate], remoteICEParameters: Str2StrDictionary, remoteDTLSParameters: Str2StrDictionary) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
@@ -34,26 +35,28 @@ export default class Publisher extends Transport {
     this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap] });
   }
 
-  getLocalSdpData(sender: Sender, localSdp: RTCSessionDescriptionInit, codecCap: Codec) {
-    let localSdpObj = sdpTransform.parse(localSdp.sdp!);
-
-    let mids: string[] = [];
-    for (let media of localSdpObj.media) {
-      mids.push(media.mid);
-      if (media.mid == sender.mid) {
-        sender.media = Media.merge(media, codecCap, this.remoteICEParameters, this.remoteICECandidates);
-      }
+  unpublish(senderId: string) {
+    let sender = this.senders.find(s => s.id == senderId);
+    if (sender) {
+      this.asyncQueue.push({ execObj: this, taskFunc: this._unpublishInternal, parameters: [sender] });
     }
+  }
 
-    this.usedMids = mids;
-    //remote media
+  private async _unpublishInternal(sender: Sender) {
+    this.pc.removeTrack(sender.transceiver.sender);
 
-    if (false === this.isGotDtls) {
-      this.isGotDtls = true;
-      //TODO: set
-      const localDTLSParameters = getDtls(localSdpObj);
+    let localSdp = await this.pc.createOffer();
 
-      this.ondtls(localDTLSParameters);
+    await this.pc.setLocalDescription(localSdp);
+
+    let localSdpObj = sdpTransform.parse(localSdp.sdp!);
+    this.usedMids = localSdpObj.media.map(m => m.mid) as Array<string>
+
+    let remoteSdp = this.generateSdp();
+    await this.pc.setRemoteDescription(remoteSdp);
+
+    if(this.onunpublished){
+      this.onunpublished(sender);
     }
   }
 
@@ -66,7 +69,7 @@ export default class Publisher extends Transport {
     });
     this.senders.push(sender);
 
-    try{
+    try {
       const localSdp = await this.pc.createOffer();
       await this.pc.setLocalDescription(localSdp);//mid after setLocalSdp
 
@@ -80,10 +83,35 @@ export default class Publisher extends Transport {
         this.onsender(sender);
       }
 
-    }catch(e){
+    } catch (e) {
       console.log(e);
     }
 
+  }
+
+  getLocalSdpData(sender: Sender, localSdp: RTCSessionDescriptionInit, codecCap: Codec) {
+    let localSdpObj = sdpTransform.parse(localSdp.sdp!);
+
+    let mids: string[] = [];
+    for (let media of localSdpObj.media) {
+      mids.push(media.mid!);
+      if (media.mid == sender.mid) {
+        sender.media = Media.merge(media, codecCap, this.remoteICEParameters, this.remoteICECandidates);
+      }
+    }
+
+    this.usedMids = mids;
+    //remote media
+
+    if (false === this.isGotDtls) {
+      this.isGotDtls = true;
+      //TODO: set
+      const localDTLSParameters = getDtls(localSdpObj);
+
+      if (localDTLSParameters && this.ondtls) {
+        this.ondtls(localDTLSParameters);
+      }
+    }
   }
 
   generateSdp() {
@@ -94,8 +122,8 @@ export default class Publisher extends Transport {
     }
 
     for (let mid of this.usedMids) {
-      let sender = this.senders.find(s =>s.mid == String(mid))
-      if (sender) {
+      let sender = this.senders.find(s => s.mid == String(mid))
+      if (sender && sender.media) {
         sdpObj.medias.push(sender.media)
       }
     }

@@ -29,6 +29,7 @@ interface PublishOptions {
 declare type CodecDic = { [key: string]: Codec }
 
 export default class Session extends SessionEvent {
+  //TODO: add init state
   metadata: Metadata
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
@@ -95,13 +96,21 @@ export default class Session extends SessionEvent {
       }
     }
 
-    let codecCap = this.supportedCodecs[codec];
+    let codecCap = this.supportedCodecs![codec];
     if (codecCap) {
-      this.publisher.publish(track, codecCap);
+      this.publisher!.publish(track, codecCap);
     } else {
       //TODO: 
     }
   }
+
+  async unpublish(senderId:string) {
+    if(this.publisher){
+      this.publisher.unpublish(senderId);
+    }
+  }
+
+
 
 
   private initTransport(role: string, transportParameters: TransportParameters) {
@@ -109,21 +118,21 @@ export default class Session extends SessionEvent {
 
     if (role === 'pub') {
       this.publisher = new Publisher(id, iceCandidates, iceParameters, dtlsParameters);
-      // this.publisher.onsenderclosed = async senderId => {
-      //   await this.socket.request({
-      //     event: 'unpublish',
-      //     data: {
-      //       transportId: this.publisher.id,
-      //       senderId
-      //     }
-      //   })
-      // };
+      this.publisher.onunpublished = async senderId => {
+        await this.socket!.request({
+          event: 'unpublish',
+          data: {
+            transportId: this.publisher!.id,
+            senderId
+          }
+        })
+      };
 
       this.publisher.ondtls = async (dtlsParameters) => {
-        await this.socket.request({
+        await this.socket!.request({
           event: 'dtls',
           data: {
-            transportId: this.publisher.id,
+            transportId: this.publisher!.id,
             role: 'pub',
             dtlsParameters
           }
@@ -131,11 +140,11 @@ export default class Session extends SessionEvent {
       };
 
       this.publisher.onsender = async (sender) => {
-        const data = await this.socket.request({
+        const data = await this.socket!.request({
           event: 'publish',
           data: {
-            transportId: this.publisher.id,
-            codec: sender.media.toCodec(),
+            transportId: this.publisher!.id,
+            codec: sender.media!.toCodec(),
             metadata: sender.metadata
           }
         })
