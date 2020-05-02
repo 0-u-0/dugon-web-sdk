@@ -36,8 +36,6 @@ export default class Socket {
 
     this.ws.onmessage = event => {
       let data = JSON.parse(event.data);
-      console.log(data);
-
       let { id, method, params } = data;
       if (method === 'response') {
         let packet = this.messages.get(id);
