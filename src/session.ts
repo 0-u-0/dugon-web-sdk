@@ -6,7 +6,8 @@ import { RemoteICECandidate, TransportParameters } from './remoteParameters';
 import { Codec } from './codec';
 import Sender from './sender';
 
-
+const DEFAULT_VIDEO_CODEC = 'VP8'
+const DEFAULT_AUDIO_CODEC = 'opus'
 
 class SessionEvent {
   onin() {
@@ -15,15 +16,22 @@ class SessionEvent {
   onclose() {
 
   }
-  onsender(sender:Sender){
+  onsender(sender: Sender) {
 
   }
 }
 
+interface PublishOptions {
+  simulcast: boolean,
+  codec: string | null
+}
+
+declare type CodecDic = { [key: string]: Codec }
+
 export default class Session extends SessionEvent {
   metadata: Metadata
   socket: Socket | null = null;
-  supportedCodecs: Map<string, Codec> | null = null;
+  supportedCodecs: CodecDic | null = null;
   publisher: Publisher | null = null;
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
@@ -63,7 +71,7 @@ export default class Session extends SessionEvent {
     });
 
     const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
-      codecs: Map<string, Codec>, pub: TransportParameters, sub: TransportParameters
+      codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
     };
     if (pub) {
       this.initTransport('pub', pubParameters);
@@ -74,7 +82,29 @@ export default class Session extends SessionEvent {
     this.supportedCodecs = codecs;
   }
 
-  initTransport(role: string, transportParameters: TransportParameters) {
+  //TODO: simulcast config , metadata
+  //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
+  async publish(track: MediaStreamTrack, { simulcast = false, codec }: PublishOptions = {
+    simulcast: false, codec: null
+  }) {
+    if (!codec) {
+      if (track.kind == 'audio') {
+        codec = DEFAULT_AUDIO_CODEC;
+      } else {
+        codec = DEFAULT_VIDEO_CODEC;
+      }
+    }
+
+    let codecCap = this.supportedCodecs[codec];
+    if (codecCap) {
+      this.publisher.publish(track, codecCap);
+    } else {
+      //TODO: 
+    }
+  }
+
+
+  private initTransport(role: string, transportParameters: TransportParameters) {
     const { id, iceCandidates, iceParameters, dtlsParameters } = transportParameters;
 
     if (role === 'pub') {

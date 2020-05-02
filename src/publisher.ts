@@ -30,8 +30,8 @@ export default class Publisher extends Transport {
 
   }
 
-  send(track: MediaStreamTrack, codecCap: Codec) {
-    this.asyncQueue.push({ execObj: this, taskFunc: this._sendInternal, parameters: [track, codecCap] });
+  publish(track: MediaStreamTrack, codecCap: Codec) {
+    this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap] });
   }
 
   getLocalSdpData(sender: Sender, localSdp: RTCSessionDescriptionInit, codecCap: Codec) {
@@ -57,7 +57,7 @@ export default class Publisher extends Transport {
     }
   }
 
-  private async _sendInternal(track: MediaStreamTrack, codecCap: Codec) {
+  private async _publishInternal(track: MediaStreamTrack, codecCap: Codec) {
     const transceiver = await this.pc.addTransceiver(track, {
       direction: 'sendonly',
     });

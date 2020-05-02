@@ -3,13 +3,19 @@ import Media from './media'
 
 const validFilter = RegExp.prototype.test.bind(/^([a-z])=(.*)/);
 
+
+declare global {
+  interface String {
+    splitOnce(separator: string): Array<string>;
+  }
+}
 //TODO: use regex later
-String.prototype.splitOnce = function (separator: string) {
+String.prototype.splitOnce = function (separator: string): Array<string> {
   const [first, ...rest] = this.split(separator)
   if (rest.length > 0) {
     return [first, rest.join(separator)]
   } else {
-    return [this]
+    return [this.toString()]
   }
 }
 

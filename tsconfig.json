@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+    "target": "esnext",
     "module": "esnext",
     "strict": true,
     "allowJs":true,
