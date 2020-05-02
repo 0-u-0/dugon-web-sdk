@@ -9,7 +9,7 @@
 
 ## Authors
 
-* CC  [[website](https://crater.one)
+[CC](https://crater.one)
 
 ## License
 
