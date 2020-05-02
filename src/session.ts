@@ -265,6 +265,7 @@ export default class Session {
       };
 
       this.subscriber.ontrack = (track, receiver) => {
+        this.resume(receiver.id);
         if (this.ontrack) this.ontrack(track, receiver);
       };
 

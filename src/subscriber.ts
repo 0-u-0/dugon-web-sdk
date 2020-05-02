@@ -94,18 +94,18 @@ export default class Subscriber extends Transport {
   unsubscribeBySenderId(senderId: string) {
     const receiver = this.receivers.find(r => r.senderId === senderId);
     if (receiver && receiver.available) {
-      this.asyncQueue.push({ execObj: this, taskFunc: this._removeReceiver, parameters: [receiver] });
+      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
     }
   }
 
   unsubscribeByReceiverId(receiverId: string) {
     const receiver = this.receivers.find(r => r.id === receiverId);
     if (receiver && receiver.available) {
-      this.asyncQueue.push({ execObj: this, taskFunc: this._removeReceiver, parameters: [receiver] });
+      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
     }
   }
 
-  async _removeReceiver(receiver: Receiver) {
+  async _unsubscribeInternal(receiver: Receiver) {
 
     receiver.media.direction = 'inactive';
     let remoteSdp = this.generateSdp();
