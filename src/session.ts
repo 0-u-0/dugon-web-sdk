@@ -283,20 +283,14 @@ export default class Session {
     }
   }
 
-  private remotePubChange(senderId: string, changedState: 'pause' | 'resume') {
+  private remoteSenderChanged(senderId: string, isPaused: boolean) {
     if (this.subscriber) {
       let receiver = this.subscriber.getReceiverBySenderId(senderId);
       if (receiver) {
-        if (changedState === 'pause') {
-          receiver.senderPaused = true;
-          if (this.onchange) this.onchange(receiver, true);
-        } else {
-          receiver.senderPaused = false;
-          if (this.onchange) this.onchange(receiver, false);
-        }
+        receiver.senderPaused = isPaused;
+        if (this.onchange) this.onchange(receiver, isPaused);
       }
     }
-
   }
 
   private handleNotification(event: string, data: StrKeyDic) {
@@ -336,12 +330,12 @@ export default class Session {
       }
       case 'pause': {
         let { senderId } = data;
-        this.remotePubChange(senderId, 'pause');
+        this.remoteSenderChanged(senderId, true);
         break;
       }
       case 'resume': {
         let { senderId } = data;
-        this.remotePubChange(senderId, 'resume');
+        this.remoteSenderChanged(senderId, false);
         break;
       }
       default: {
