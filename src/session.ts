@@ -7,6 +7,7 @@ import { Codec } from './codec';
 import Sender from './sender';
 import Subscriber from './subscriber';
 import Receiver from './receiver';
+import RemoteSender from './remoteSender';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -37,12 +38,12 @@ export default class Session {
   subscriber?: Subscriber;
   //event
   onclose: (() => void) | null = null;
-  onsender: ((sender: Sender) => void) | null = null;
+  onsender: ((senderId: string, tokenId: string, metadata: StrDic) => void) | null = null;
   onin: ((tokenId: string, metadata: StrDic) => void) | null = null;
   onout?: ((tokenId: string) => void);
   ontrack?: ((track: MediaStreamTrack, receiver: Receiver) => void);
   onunsubscribed?: ((receiver: Receiver) => void);
-  onreceiver?: ((receiver: Receiver, tokenId: string, senderId: string, metadata: StrDic) => void)
+  onreceiver?: ((receiver: Receiver) => void)
   onchange?: ((receiver: Receiver, isPaused: boolean) => void)
   constructor(public readonly url: string, public sessionId: string, public tokenId: string,
     { metadata = {} } = {}) {
@@ -141,9 +142,20 @@ export default class Session {
 
   }
 
-  subscribe(receiverId: string) {
-    stringChecker(receiverId, 'subscribe() receiverId');
-    if (this.subscriber) this.subscriber.subscribe(receiverId);
+  async subscribe(senderId: string) {
+    // stringChecker(receiverId, 'subscribe() receiverId');
+    // if (this.subscriber) this.subscriber.subscribe(receiverId);
+    if (this.subscriber) {
+      const remoteSender = this.subscriber.remoteSenders.get(senderId)
+      if (remoteSender) {
+        const parameters = await this.request('subscribe', remoteSender);
+        const { codec,receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
+        let receiver = this.subscriber.addReceiver(senderId, remoteSender.tokenId, receiverId, codec, remoteSender.metadata);
+        this.subscriber.subscribe(receiverId);  
+        if (this.onreceiver) this.onreceiver(receiver);
+      }
+    }
+
   }
 
   unsubscribe(receiverId: string) {
@@ -246,7 +258,8 @@ export default class Session {
         const { senderId } = data as { senderId: string };
         sender.id = senderId;
         if (this.onsender) {
-          this.onsender(sender);
+          // this.onsender(sender);
+          this.onsender(sender.id, this.tokenId, sender.metadata);
         }
       }
 
@@ -265,7 +278,7 @@ export default class Session {
       };
 
       this.subscriber.ontrack = (track, receiver) => {
-        this.resume(receiver.id);
+        // this.resume(receiver.id);
         if (this.ontrack) this.ontrack(track, receiver);
       };
 
@@ -312,10 +325,13 @@ export default class Session {
         break;
       };
       case 'publish': {
-        let { senderId, tokenId, metadata, codec, receiverId } = data;
+        let remoteSender = data as RemoteSender;
+
         if (this.subscriber) {
-          let receiver = this.subscriber.addReceiver(senderId, tokenId, receiverId, codec, metadata);
-          if (this.onreceiver) this.onreceiver(receiver, tokenId, senderId, metadata);
+          this.subscriber.remoteSenders.set(remoteSender.senderId, remoteSender);
+          if (this.onsender) {
+            this.onsender(remoteSender.senderId, remoteSender.tokenId, remoteSender.metadata);
+          }
         }
 
         break;

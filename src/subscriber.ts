@@ -10,7 +10,7 @@ import Media from './media';
 import Sdp from './sdp';
 import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { Codec } from './codec';
-
+import RemoteSender from './remoteSender';
 
 export default class Subscriber extends Transport {
   receivers: Receiver[] = [];
@@ -22,6 +22,8 @@ export default class Subscriber extends Transport {
   onreceiver?: ((receiver: Receiver) => void)
   ondtls?: ((dtls: DTLSparameter) => void)
   onunsubscribed?: ((receiver: Receiver) => void)
+
+  remoteSenders = new Map<string,RemoteSender>();
   constructor(id: string, remoteICECandidates: RemoteICECandidate[], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
   }
