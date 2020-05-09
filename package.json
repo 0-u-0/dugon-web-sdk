@@ -1,14 +1,18 @@
 {
-  "name": "web-sdk",
-  "version": "1.0.0",
+  "name": "dugon-web-sdk",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0-u-0/dugon-web-sdk.git"
+  },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "CC <craterone11@gmail.com> (https://crater.one)",
+  "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.1.0",
     "@rollup/plugin-node-resolve": "^7.1.3",
