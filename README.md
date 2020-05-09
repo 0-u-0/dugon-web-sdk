@@ -7,6 +7,11 @@
 
 ## Documentation
 
+## Browsers support
+
+| ![Chrome](https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png) Chrome | ![Firefox](https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png) Firefox  | ![Safari](https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png) Safari |
+| --- | --- | --- | 
+| M80+ | WIP | WIP |
 ## Authors
 
 [CC](https://crater.one)
