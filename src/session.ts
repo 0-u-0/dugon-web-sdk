@@ -56,7 +56,7 @@ export default class Session {
 
   }
 
-  public async connect({ pub = false, sub = false } = { pub: true, sub: true }) {
+  public async connect({ pub = false, sub = false, mediaId = '' } = { pub: true, sub: true, mediaId: '' }) {
     if (SessionState.New === this.state) {
       this.state = SessionState.Connecting;
 
@@ -86,6 +86,7 @@ export default class Session {
         data: {
           pub,
           sub,
+          mediaId,
         }
       });
 
@@ -149,9 +150,9 @@ export default class Session {
       const remoteSender = this.subscriber.remoteSenders.get(senderId)
       if (remoteSender) {
         const parameters = await this.request('subscribe', remoteSender);
-        const { codec,receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
+        const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
         let receiver = this.subscriber.addReceiver(senderId, remoteSender.tokenId, receiverId, codec, remoteSender.metadata);
-        this.subscriber.subscribe(receiverId);  
+        this.subscriber.subscribe(receiverId);
         if (this.onreceiver) this.onreceiver(receiver);
       }
     }
