@@ -180,6 +180,7 @@ export default class Session {
     } else if (this.publisher) {
       let sender = this.publisher.getSender(id);
       if (sender) {
+        sender.changeTrackState(false);
         transportId = this.publisher.id;
         role = 'pub';
         senderId = sender.id;
@@ -211,6 +212,7 @@ export default class Session {
     } else if (this.publisher) {
       let sender = this.publisher.getSender(id);
       if (sender) {
+        sender.changeTrackState(true);
         transportId = this.publisher.id;
         role = 'pub';
         senderId = sender.id;

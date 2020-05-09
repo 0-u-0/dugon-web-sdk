@@ -8,6 +8,9 @@ export default class Sender {
 
   }
 
+  changeTrackState(enabled:boolean){
+    this.track.enabled = enabled;
+  }
 
   get kind() {
     return this.track.kind;
