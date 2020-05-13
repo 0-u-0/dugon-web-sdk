@@ -4,7 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';//Convert CommonJS modules to ES6
 
 export default {
-  input: 'src/index.ts',
+  input: 'src/dugon.ts',
   output: {
     file: 'dst/dugon.js',
     format: 'umd',

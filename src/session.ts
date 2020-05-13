@@ -8,6 +8,8 @@ import Sender from './sender';
 import Subscriber from './subscriber';
 import Receiver from './receiver';
 import RemoteSender from './remoteSender';
+import DugonMediaSource from './mediasource';
+import Dugon from './dugon';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -41,7 +43,7 @@ export default class Session {
   onsender: ((senderId: string, tokenId: string, metadata: StrDic) => void) | null = null;
   onin: ((tokenId: string, metadata: StrDic) => void) | null = null;
   onout?: ((tokenId: string) => void);
-  ontrack?: ((track: MediaStreamTrack, receiver: Receiver) => void);
+  onmedia?: ((source: DugonMediaSource, receiver: Receiver) => void);
   onunsubscribed?: ((receiver: Receiver) => void);
   onreceiver?: ((receiver: Receiver) => void)
   onchange?: ((receiver: Receiver, isPaused: boolean) => void)
@@ -111,7 +113,7 @@ export default class Session {
 
   //TODO: simulcast config 
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
-  publish(track: MediaStreamTrack, { simulcast = false, metadata = {}, codec }: PublishOptions = {
+  publish(source: DugonMediaSource, { simulcast = false, metadata = {}, codec }: PublishOptions = {
     simulcast: false, metadata: {}
   }) {
     //TODO: add track checker
@@ -119,7 +121,7 @@ export default class Session {
       metadataChecker(metadata);
 
       if (!codec) {
-        if (track.kind == 'audio') {
+        if (source.kind == 'audio') {
           codec = DEFAULT_AUDIO_CODEC;
         } else {
           codec = DEFAULT_VIDEO_CODEC;
@@ -128,7 +130,7 @@ export default class Session {
 
       let codecCap = this.supportedCodecs![codec];
       if (codecCap) {
-        if (this.publisher) this.publisher.publish(track, codecCap, metadata);
+        if (this.publisher) this.publisher.publish(source.track, codecCap, metadata);
       } else {
         //TODO: 
       }
@@ -282,7 +284,7 @@ export default class Session {
 
       this.subscriber.ontrack = (track, receiver) => {
         // this.resume(receiver.id);
-        if (this.ontrack) this.ontrack(track, receiver);
+        if (this.onmedia) this.onmedia(new DugonMediaSource(track), receiver);
       };
 
       this.subscriber.onunsubscribed = receiver => {
