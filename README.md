@@ -11,8 +11,8 @@ $ rollup -c
 
 ## Documentation
 
-- [Documentation](https://dugon.one/)
-- [API]()
+- [Documentation](https://dugon.one/#/client_overview)
+- [API](#)
 
 ## Browsers support
 
