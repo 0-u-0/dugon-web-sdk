@@ -1,5 +1,6 @@
 import Session from './session';
 import DugonMediaSource from './mediasource';
+import { StrDic, StrKeyDic } from './remoteParameters';
 
 declare global {
   interface MediaDevices {
@@ -13,9 +14,23 @@ export default class Dugon {
     return new Session(url, sessionId, tokenId, { metadata });
   }
 
-  static async createVideoSource() {
+  static async createVideoSource(width: number = 320, height: number = 240, fps: number = 15, mandatory: boolean = false, deviceId?: string) {
+
+    let constraints: {};
+
+    if (mandatory) {
+      constraints = {
+        width: { exact: width }, height: { exact: height }, frameRate: { exact: fps }, deviceId: { exact: deviceId },
+      }
+    } else {
+      constraints = {
+        width: { ideal: width }, height: { ideal: height }, frameRate: { ideal: fps }, deviceId: { ideal: deviceId },
+      }
+    }
     //TODO(CC): add resolution, fps,deviceId , is mandatory ,to config
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: constraints
+    });
     const [videoTrack] = stream.getVideoTracks();
     return new DugonMediaSource(videoTrack);
   }
@@ -30,6 +45,10 @@ export default class Dugon {
     const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
     const [screenTrack] = stream.getVideoTracks();
     return new DugonMediaSource(screenTrack);
+  }
+
+  static createMediaSource(mediaTrack: MediaStreamTrack) {
+    return new DugonMediaSource(mediaTrack);
   }
 
 }
