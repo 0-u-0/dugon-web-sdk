@@ -27,7 +27,6 @@ export default class Dugon {
         width: { ideal: width }, height: { ideal: height }, frameRate: { ideal: fps }, deviceId: { ideal: deviceId },
       }
     }
-    //TODO(CC): add resolution, fps,deviceId , is mandatory ,to config
     const stream = await navigator.mediaDevices.getUserMedia({
       video: constraints
     });
