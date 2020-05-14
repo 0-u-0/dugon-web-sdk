@@ -25,9 +25,9 @@ export default class Sender {
     return !(this.transceiver.direction === 'inactive');
   }
 
-  get isStopped() {
-    return this.transceiver.stopped;
-  }
+  // get isStopped() {
+  //   return this.transceiver.stopped;
+  // }
 
 
 

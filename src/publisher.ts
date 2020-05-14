@@ -29,8 +29,8 @@ export default class Publisher extends Transport {
 
   }
 
-  publish(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata) {
-    this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap, metadata] });
+  publish(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata, maxBitrate: number) {
+    this.asyncQueue.push({ execObj: this, taskFunc: this._publishInternal, parameters: [track, codecCap, metadata, maxBitrate] });
   }
 
   unpublish(senderId: string) {
@@ -40,8 +40,8 @@ export default class Publisher extends Transport {
     }
   }
 
-  getSender(id:string){
-    return this.senders.find(s=>s.id === id)
+  getSender(id: string) {
+    return this.senders.find(s => s.id === id)
   }
 
   private async _unpublishInternal(sender: Sender) {
@@ -62,9 +62,11 @@ export default class Publisher extends Transport {
     }
   }
 
-  private async _publishInternal(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata) {
+  private async _publishInternal(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata, maxBitrate: number) {
+    const encodings = [{ maxBitrate: maxBitrate }];
     const transceiver = await this.pc.addTransceiver(track, {
       direction: 'sendonly',
+      sendEncodings: encodings,
     });
     const sender = new Sender(track, transceiver, metadata);
     this.senders.push(sender);

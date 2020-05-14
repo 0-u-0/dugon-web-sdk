@@ -14,7 +14,6 @@
     "resolveJsonModule": true,
     "newLine": "LF",
     "types": [
-      "webrtc"
     ],
     "lib": [
       "es6",
