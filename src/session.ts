@@ -4,12 +4,10 @@ import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
 import { Codec } from './codec';
-import Sender from './sender';
 import Subscriber from './subscriber';
 import Receiver from './receiver';
 import RemoteSender from './remoteSender';
 import DugonMediaSource from './mediasource';
-import Dugon from './dugon';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -162,11 +160,12 @@ export default class Session {
 
   }
 
-  unsubscribe(receiverId: string) {
-    stringChecker(receiverId, 'unsubscribe() receiverId');
-    if (this.subscriber) this.subscriber.unsubscribeByReceiverId(receiverId);
+  unsubscribe(senderId: string) {
+    stringChecker(senderId, 'unsubscribe() senderId');
+    if (this.subscriber) this.subscriber.unsubscribeBySenderId(senderId);
   }
 
+  //senderId
   pause(id: string) {
     stringChecker(id, 'pause() id');
     let transportId = '';
@@ -174,7 +173,7 @@ export default class Session {
     let senderId = '';
 
     if (this.subscriber) {
-      let receiver = this.subscriber.getReceiver(id);
+      let receiver = this.subscriber.getReceiverBySenderId(id);
       if (receiver) {
         transportId = this.subscriber.id;
         role = 'sub';
@@ -199,6 +198,7 @@ export default class Session {
     }
   }
 
+  //senderId
   resume(id: string) {
     stringChecker(id, 'resume() id');
     let transportId = '';
@@ -206,7 +206,7 @@ export default class Session {
     let senderId = '';
 
     if (this.subscriber) {
-      let receiver = this.subscriber.getReceiver(id);
+      let receiver = this.subscriber.getReceiverBySenderId(id);
       if (receiver) {
         transportId = this.subscriber.id;
         role = 'sub';
