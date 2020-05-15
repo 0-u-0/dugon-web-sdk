@@ -179,7 +179,8 @@ export default class Session {
         role = 'sub';
         senderId = receiver.senderId;
       }
-    } else if (this.publisher) {
+    }
+    if (transportId == '' && this.publisher) {
       let sender = this.publisher.getSender(id);
       if (sender) {
         sender.changeTrackState(false);
@@ -212,7 +213,8 @@ export default class Session {
         role = 'sub';
         senderId = receiver.senderId;
       }
-    } else if (this.publisher) {
+    }
+    if (transportId == '' && this.publisher) {
       let sender = this.publisher.getSender(id);
       if (sender) {
         sender.changeTrackState(true);
