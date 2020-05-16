@@ -1,8 +1,7 @@
-import { StrDic,RemoteICECandidate } from './remoteParameters';
+import { StrDic, RemoteICECandidate } from './remoteParameters';
 
 declare global {
   interface RTCConfiguration {
-    optional?: any[]
     sdpSemantics?: string
   }
 }

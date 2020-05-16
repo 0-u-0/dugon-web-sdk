@@ -11,7 +11,8 @@ import DugonMediaSource from './mediasource';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
-const DEFAULT_MAX_BITRATE = 150000;
+const DEFAULT_AUDIO_MAX_BITRATE = 60000;
+const DEFAULT_VIDEO_MAX_BITRATE = 150000;
 
 
 declare type PublishOptions = {
@@ -112,8 +113,8 @@ export default class Session {
 
   //TODO: simulcast config 
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
-  publish(source: DugonMediaSource, { simulcast = false, metadata = {}, maxBitrate = DEFAULT_MAX_BITRATE, codec }: PublishOptions = {
-    simulcast: false, metadata: {}, maxBitrate: DEFAULT_MAX_BITRATE
+  publish(source: DugonMediaSource, { simulcast = false, metadata = {}, maxBitrate, codec }: PublishOptions = {
+    simulcast: false, metadata: {},
   }) {
     //TODO: add track checker
     if (SessionState.Connected === this.state) {
@@ -122,10 +123,21 @@ export default class Session {
       if (!codec) {
         if (source.kind == 'audio') {
           codec = DEFAULT_AUDIO_CODEC;
+          maxBitrate = DEFAULT_AUDIO_MAX_BITRATE;
         } else {
           codec = DEFAULT_VIDEO_CODEC;
+          maxBitrate = DEFAULT_VIDEO_MAX_BITRATE;
         }
       }
+
+      if(!maxBitrate){
+        if (source.kind == 'audio') {
+          maxBitrate = DEFAULT_AUDIO_MAX_BITRATE;
+        } else {
+          maxBitrate = DEFAULT_VIDEO_MAX_BITRATE;
+        }
+      }
+
 
       let codecCap = this.supportedCodecs![codec];
       if (codecCap) {

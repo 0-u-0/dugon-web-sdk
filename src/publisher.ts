@@ -28,11 +28,7 @@ export default class Publisher extends Transport {
   constructor(id: string, remoteICECandidates: [RemoteICECandidate], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
 
-    this.pc = new RTCPeerConnection({
-      iceServers: [], iceTransportPolicy: 'all',
-      bundlePolicy: 'max-bundle', rtcpMuxPolicy: 'require', sdpSemantics: "unified-plan",optional: [{ googDscp: true }],
-    });
-
+    this.pc = new (RTCPeerConnection as any)({ iceServers: [], iceTransportPolicy: 'all', bundlePolicy: 'max-bundle', rtcpMuxPolicy: 'require', sdpSemantics: "unified-plan", }, { optional: [{ googDscp: true }] });
   }
 
   publish(track: MediaStreamTrack, codecCap: Codec, metadata: Metadata, maxBitrate: number) {
