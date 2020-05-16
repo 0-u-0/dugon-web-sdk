@@ -12,8 +12,9 @@ import Sdp from './sdp';
 import { Metadata } from './metadata';
 
 
-
 export default class Publisher extends Transport {
+  pc: RTCPeerConnection;
+
   asyncQueue = new AsyncQueue()
   isGotDtls = false
   senders = Array<Sender>()
@@ -26,6 +27,11 @@ export default class Publisher extends Transport {
 
   constructor(id: string, remoteICECandidates: [RemoteICECandidate], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
+
+    this.pc = new RTCPeerConnection({
+      iceServers: [], iceTransportPolicy: 'all',
+      bundlePolicy: 'max-bundle', rtcpMuxPolicy: 'require', sdpSemantics: "unified-plan",optional: [{ googDscp: true }],
+    });
 
   }
 

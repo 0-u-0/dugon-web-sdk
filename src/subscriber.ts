@@ -13,6 +13,8 @@ import { Codec } from './codec';
 import RemoteSender from './remoteSender';
 
 export default class Subscriber extends Transport {
+  pc: RTCPeerConnection;
+
   receivers: Receiver[] = [];
   asyncQueue = new AsyncQueue();
   isGotDtls = false;
@@ -23,9 +25,14 @@ export default class Subscriber extends Transport {
   ondtls?: ((dtls: DTLSparameter) => void)
   onunsubscribed?: ((receiver: Receiver) => void)
 
-  remoteSenders = new Map<string,RemoteSender>();
+  remoteSenders = new Map<string, RemoteSender>();
   constructor(id: string, remoteICECandidates: RemoteICECandidate[], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
+
+    //FIXME: sdpSemantics: "unified-plan"
+    this.pc = new RTCPeerConnection({ iceServers: [], iceTransportPolicy: 'all', 
+    bundlePolicy: 'max-bundle', rtcpMuxPolicy: 'require', sdpSemantics: "unified-plan" });
+
   }
 
   unsubscribeByTokenId(tokenId: string) {
