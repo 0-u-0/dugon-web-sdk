@@ -8,13 +8,31 @@ declare global {
   }
 }
 
-export default class Dugon {
+/**
+ * The Entry of SDK
+ */
+ export default class Dugon {
 
-  static createSession(url: string, sessionId: string, tokenId: string, metadata: object) {
+  /**
+   * 
+   * @param url 
+   * @param sessionId 
+   * @param tokenId 
+   * @param metadata 
+   */
+  public static createSession(url: string, sessionId: string, tokenId: string, metadata: object) {
     return new Session(url, sessionId, tokenId, { metadata });
   }
 
-  static async createVideoSource(width: number = 320, height: number = 240, fps: number = 15, mandatory: boolean = false, deviceId?: string) {
+  /**
+   * 
+   * @param width 
+   * @param height 
+   * @param fps 
+   * @param mandatory 
+   * @param deviceId 
+   */
+  public static async createVideoSource(width: number = 320, height: number = 240, fps: number = 15, mandatory: boolean = false, deviceId?: string) {
 
     let constraints: {};
 
