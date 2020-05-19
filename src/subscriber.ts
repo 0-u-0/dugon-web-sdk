@@ -101,6 +101,8 @@ export default class Subscriber extends Transport {
   }
 
   unsubscribeBySenderId(senderId: string) {
+    this.remoteSenders.delete(senderId);
+
     const receiver = this.receivers.find(r => r.senderId === senderId);
     if (receiver && receiver.available) {
       this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
