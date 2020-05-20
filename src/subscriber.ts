@@ -55,11 +55,9 @@ export default class Subscriber extends Transport {
     return receiver;
   }
 
-  subscribe(receiverId: string) {
-    const receiver = this.receivers.find(r => r.id === receiverId);
-    if (receiver) {
-      this.asyncQueue.push({ execObj: this, taskFunc: this._subscribeInternal, parameters: [receiver] });
-    }
+  //TODO(CC): use receiver
+  subscribe(receiver: Receiver) {
+    this.asyncQueue.push({ execObj: this, taskFunc: this._subscribeInternal, parameters: [receiver] });
   }
 
   getReceiver(id: string) {

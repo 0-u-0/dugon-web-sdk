@@ -165,8 +165,9 @@ export default class Session {
         const parameters = await this.request('subscribe', remoteSender);
         const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
         let receiver = this.subscriber.addReceiver(senderId, remoteSender.tokenId, receiverId, codec, remoteSender.metadata);
-        this.subscriber.subscribe(receiverId);
-        if (this.onreceiver) this.onreceiver(receiver);
+        this.subscriber.subscribe(receiver);
+        //TODO(CC): remove onreceiver
+        // if (this.onreceiver) this.onreceiver(receiver);
       }
     }
 
