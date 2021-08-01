@@ -83,24 +83,21 @@ export default class Session {
 
       await this.socket.init();
 
-      const parameters = await this.socket.request({
-        event: 'join',
-        data: {
-          pub,
-          sub,
-          mediaId,
-        }
+      const parameters = await this.socket.request('join', {
+        pub,
+        sub,
+        mediaId,
       });
 
       const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
         codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
       };
-      if (pub) {
-        this.initTransport('pub', pubParameters);
-      }
-      if (sub) {
-        this.initTransport('sub', subParameters);
-      }
+      // if (pub) {
+      //   this.initTransport('pub', pubParameters);
+      // }
+      // if (sub) {
+      //   this.initTransport('sub', subParameters);
+      // }
       this.supportedCodecs = codecs;
 
       //after pub & sub init
@@ -111,6 +108,13 @@ export default class Session {
     }
   }
 
+  public async createTransport(direction: string,) {
+    let request_data = {
+      direction
+    };
+
+    const resposne = await this.request('createTransport', request_data);
+  }
   //TODO: simulcast config 
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
   publish(source: DugonMediaSource, { simulcast = false, metadata = {}, maxBitrate, codec }: PublishOptions = {
@@ -130,7 +134,7 @@ export default class Session {
         }
       }
 
-      if(!maxBitrate){
+      if (!maxBitrate) {
         if (source.kind == 'audio') {
           maxBitrate = DEFAULT_AUDIO_MAX_BITRATE;
         } else {
@@ -268,13 +272,10 @@ export default class Session {
       };
 
       this.publisher.onsender = async (sender) => {
-        const data = await this.socket!.request({
-          event: 'publish',
-          data: {
-            transportId: this.publisher!.id,
-            codec: sender.media!.toCodec(),
-            metadata: sender.metadata
-          }
+        const data = await this.socket!.request('publish', {
+          transportId: this.publisher!.id,
+          codec: sender.media!.toCodec(),
+          metadata: sender.metadata
         })
         const { senderId } = data as { senderId: string };
         sender.id = senderId;
@@ -288,13 +289,10 @@ export default class Session {
       this.subscriber = new Subscriber(id, iceCandidates, iceParameters, dtlsParameters);
 
       this.subscriber.ondtls = async dtlsParameters => {
-        await this.socket!.request({
-          event: 'dtls',
-          data: {
-            transportId: this.subscriber!.id,
-            role: 'sub',
-            dtlsParameters
-          }
+        await this.socket!.request('dtls', {
+          transportId: this.subscriber!.id,
+          role: 'sub',
+          dtlsParameters
         });
       };
 
@@ -305,12 +303,9 @@ export default class Session {
 
       this.subscriber.onunsubscribed = receiver => {
         if (this.onunsubscribed) this.onunsubscribed(receiver);
-        this.socket!.request({
-          event: 'unsubscribe',
-          data: {
-            transportId: this.subscriber!.id,
-            senderId: receiver.senderId,
-          }
+        this.socket!.request('unsubscribe', {
+          transportId: this.subscriber!.id,
+          senderId: receiver.senderId,
         })
       };
 
@@ -381,11 +376,9 @@ export default class Session {
     }
   }
 
-  private async request(event: string, data: object) {
+  private async request(method: string, data: object) {
     if (this.socket) {
-      return await this.socket.request({
-        event, data
-      })
+      return await this.socket.request(method, data)
     } else {
       //TODO: 
     }

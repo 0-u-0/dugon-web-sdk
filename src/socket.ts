@@ -35,16 +35,15 @@ export default class Socket {
     this.ws = new WebSocket(this.getFullURL());
 
     this.ws.onmessage = event => {
-      let data = JSON.parse(event.data);
-      let { id, method, params } = data;
-      if (method === 'response') {
+      let response_data = JSON.parse(event.data);
+      let { id, method, data, type } = response_data;
+      if (type === 'response') {
         let packet = this.messages.get(id);
         if (packet) {
-          packet.resolve(params);
+          packet.resolve(data);
         }
-      } else if (method === 'notification') {
-        let { event, data } = params;
-        if (this.onnotification) this.onnotification(event, data);
+      } else if (type === 'notify') {
+        if (this.onnotification) this.onnotification(method, data);
       }
     }
 
@@ -65,13 +64,14 @@ export default class Socket {
     return new Promise(executor);
   }
 
-  async request(params: object) {
+  async request(method: string, data: object) {
     const id = randomInitId(8);
 
     this.sendJSON({
-      'method': 'request',
+      type: 'request',
+      method,
       id,
-      params,
+      data,
     });
 
     const executor = (y: Function, n: Function) => {
