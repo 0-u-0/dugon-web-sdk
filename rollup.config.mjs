@@ -2,8 +2,8 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';//Convert CommonJS modules to ES6
-import { terser } from "rollup-plugin-terser";
-import pkg from './package.json';
+import terser from '@rollup/plugin-terser';
+import pkg from './package.json' assert { type : "json"};
 
 
 //FIXME(CC): remove alpha after sdk becomes stable
