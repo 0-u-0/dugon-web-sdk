@@ -2,12 +2,6 @@ import Session from './session';
 import DugonMediaSource from './mediasource';
 import { StrDic, StrKeyDic } from './remoteParameters';
 
-declare global {
-  interface MediaDevices {
-    getDisplayMedia(constraints: MediaStreamConstraints): Promise<MediaStream>;
-  }
-}
-
 /**
  * The Entry of SDK
  */
