@@ -1,20 +1,18 @@
 import Session from './core/session';
 import DugonMediaSource from './core/mediasource';
 
+import type {
+  RoomConfig
+} from './room'
+
+import Room from './room';
 /**
  * The Entry of SDK
  */
- export default class Dugon {
+export default class Dugon {
 
-  /**
-   * 
-   * @param url 
-   * @param sessionId 
-   * @param tokenId 
-   * @param metadata 
-   */
-  public static createSession(url: string, sessionId: string, tokenId: string, metadata: object) {
-    return new Session(url, sessionId, tokenId, { metadata });
+  public static room(url: string, config?: RoomConfig) {
+    return new Room(url, config);
   }
 
   /**

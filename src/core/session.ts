@@ -31,6 +31,7 @@ enum SessionState {
   Disconnected = "disconnected",
 }
 
+// TODO(cc): 10/14/24 rename session to room
 export default class Session {
   state: SessionState = SessionState.New;
   metadata: Metadata
@@ -47,10 +48,10 @@ export default class Session {
   onunsubscribed?: ((receiver: Receiver) => void);
   onreceiver?: ((receiver: Receiver) => void)
   onchange?: ((receiver: Receiver, isPaused: boolean) => void)
-  constructor(public readonly url: string, public sessionId: string, public tokenId: string,
-    { metadata = {} } = {}) {
+  constructor(public readonly url: string, public sessionId: string, public userId: string, public tokenId: string, metadata: any) {
 
     stringChecker(this.url, 'url');
+    stringChecker(this.userId, 'userId');
     stringChecker(this.sessionId, 'sessionId');
     stringChecker(this.tokenId, 'tokenId');
     metadataChecker(metadata);
@@ -63,8 +64,9 @@ export default class Session {
       this.state = SessionState.Connecting;
 
       this.socket = new Socket(this.url, {
-        'sessionId': this.sessionId,
+        'roomId': this.sessionId,
         'tokenId': this.tokenId,
+        'userid':this.userId,
         'metadata': this.metadata,
       });
 
@@ -130,7 +132,7 @@ export default class Session {
         }
       }
 
-      if(!maxBitrate){
+      if (!maxBitrate) {
         if (source.kind == 'audio') {
           maxBitrate = DEFAULT_AUDIO_MAX_BITRATE;
         } else {
