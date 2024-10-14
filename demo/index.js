@@ -18,26 +18,26 @@ const $ = document.querySelector.bind(document);
 async function initSession(username, room) {
     const signalServer = `ws://192.168.97.138:8800`;
 
-    const tokenId = randomId(10);
-    session = Dugon.createSession(signalServer, room, tokenId, { username });
+    const myUserId = randomId(10);
+    session = Dugon.createSession(signalServer, room, myUserId, "", { username });
 
-    session.onin = (tokenId, metadata) => {
-        console.log(tokenId, ' in');
+    session.onin = (userId, metadata) => {
+        console.log(userId, ' in');
 
         const stream = new MediaStream();
-        streams.set(tokenId, stream);
+        streams.set(userId, stream);
     };
 
-    session.onout = tokenId => {
-        console.log(tokenId, ' out');
+    session.onout = userId => {
+        console.log(userId, ' out');
     };
 
     session.onclose = _ => {
 
     };
 
-    session.onsender = (senderId, remoteTokenId, metadata) => {
-        if (remoteTokenId == tokenId) {
+    session.onsender = (senderId, remoteUserId, metadata) => {
+        if (remoteUserId == myUserId) {
             console.log('local', senderId, metadata);
           } else {
             session.subscribe(senderId);
@@ -51,15 +51,15 @@ async function initSession(username, room) {
     session.onmedia = (media, receiver) => {
         console.log('onmedia')
 
-        const stream = streams.get(receiver.tokenId);
-        if ($(`#videoBox-${receiver.tokenId}`)) {
+        const stream = streams.get(receiver.userId);
+        if ($(`#videoBox-${receiver.userId}`)) {
           stream.addTrack(media.track);
         } else {
 
-          console.log('???', receiver.tokenId);
+          console.log('???', receiver.userId);
           
           const videoBox = document.createElement('div');
-          videoBox.id = `videoBox-${receiver.tokenId}`;
+          videoBox.id = `videoBox-${receiver.userId}`;
 
     
           const newVideo = document.createElement('video');

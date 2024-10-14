@@ -16,6 +16,16 @@ export default class Dugon {
   }
 
   /**
+ * 
+ * @param url 
+ * @param sessionId 
+ * @param tokenId 
+ * @param metadata 
+ */
+  public static createSession(url: string, sessionId: string, userId: string, tokenId: string, metadata: object) {
+    return new Session(url, sessionId, userId, tokenId, metadata);
+  }
+  /**
    * 
    * @param width 
    * @param height 

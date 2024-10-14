@@ -35,21 +35,21 @@ export default class Subscriber extends Transport {
 
   }
 
-  unsubscribeByTokenId(tokenId: string) {
+  unsubscribeByUserId(userId: string) {
     for (let receiver of this.receivers) {
-      if (tokenId === receiver.tokenId) {
+      if (userId === receiver.userId) {
         this.unsubscribeByReceiverId(receiver.id);
       }
     }
   }
 
-  addReceiver(senderId: string, tokenId: string, receiverId: string,
+  addReceiver(senderId: string, userId: string, receiverId: string,
     codec: Codec, metadata: StrDic) {
     const mid = String(this.currentMid++);
 
     const media = Media.create(mid, codec, this.remoteICEParameters, this.remoteICECandidates, receiverId);
 
-    const receiver = new Receiver(mid, senderId, tokenId, receiverId, codec, metadata, media);
+    const receiver = new Receiver(mid, senderId, userId, receiverId, codec, metadata, media);
 
     this.receivers.push(receiver);
     return receiver;

@@ -15,7 +15,7 @@ function isObject(x: any): x is object {
 
 export function stringChecker(x: any, varName: string) {
   if (!isString(x)) {
-    throw TypeError(`${varName} must be string.`)
+    throw TypeError(`${varName} must be string, value:${typeof x}`)
   }
 }
 

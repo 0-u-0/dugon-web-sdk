@@ -41,9 +41,9 @@ export default class Session {
   subscriber?: Subscriber;
   //event
   onclose: (() => void) | null = null;
-  onsender: ((senderId: string, tokenId: string, metadata: StrDic) => void) | null = null;
-  onin: ((tokenId: string, metadata: StrDic) => void) | null = null;
-  onout?: ((tokenId: string) => void);
+  onsender: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
+  onin: ((userId: string, metadata: StrDic) => void) | null = null;
+  onout?: ((userId: string) => void);
   onmedia?: ((source: DugonMediaSource, receiver: Receiver) => void);
   onunsubscribed?: ((receiver: Receiver) => void);
   onreceiver?: ((receiver: Receiver) => void)
@@ -66,7 +66,7 @@ export default class Session {
       this.socket = new Socket(this.url, {
         'roomId': this.sessionId,
         'tokenId': this.tokenId,
-        'userid':this.userId,
+        'userId':this.userId,
         'metadata': this.metadata,
       });
 
@@ -166,7 +166,7 @@ export default class Session {
       if (remoteSender) {
         const parameters = await this.request('subscribe', remoteSender);
         const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
-        let receiver = this.subscriber.addReceiver(senderId, remoteSender.tokenId, receiverId, codec, remoteSender.metadata);
+        let receiver = this.subscriber.addReceiver(senderId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
         this.subscriber.subscribe(receiver);
         //TODO(CC): remove onreceiver
         // if (this.onreceiver) this.onreceiver(receiver);
@@ -282,7 +282,7 @@ export default class Session {
         sender.id = senderId;
         if (this.onsender) {
           // this.onsender(sender);
-          this.onsender(sender.id, this.tokenId, sender.metadata);
+          this.onsender(sender.id, this.userId, sender.metadata);
         }
       }
 
@@ -332,19 +332,19 @@ export default class Session {
   private handleNotification(event: string, data: StrKeyDic) {
     switch (event) {
       case 'join': {
-        let { tokenId, metadata } = data as { tokenId: string, metadata: StrDic };
+        let { userId, metadata } = data as { userId: string, metadata: StrDic };
         if (this.onin) {
-          this.onin(tokenId, metadata);
+          this.onin(userId, metadata);
         }
         break;
       };
       case 'leave': {
-        let { tokenId } = data as { tokenId: string };
+        let { userId } = data as { userId: string };
         //TODO: release all receiver
         if (this.subscriber) {
-          this.subscriber.unsubscribeByTokenId(tokenId);
+          this.subscriber.unsubscribeByUserId(userId);
         }
-        if (this.onout) this.onout(tokenId);
+        if (this.onout) this.onout(userId);
         break;
       };
       case 'publish': {
@@ -353,14 +353,14 @@ export default class Session {
         if (this.subscriber) {
           this.subscriber.remoteSenders.set(remoteSender.senderId, remoteSender);
           if (this.onsender) {
-            this.onsender(remoteSender.senderId, remoteSender.tokenId, remoteSender.metadata);
+            this.onsender(remoteSender.senderId, remoteSender.userId, remoteSender.metadata);
           }
         }
 
         break;
       };
       case 'unpublish': {
-        let { senderId, tokenId } = data;
+        let { senderId, userId } = data;
         if (this.subscriber) {
           this.subscriber.unsubscribeBySenderId(senderId);
         }
