@@ -1,6 +1,5 @@
-import Session from './session';
-import DugonMediaSource from './mediasource';
-import { StrDic, StrKeyDic } from './remoteParameters';
+import Session from './core/session';
+import DugonMediaSource from './core/mediasource';
 
 /**
  * The Entry of SDK
