@@ -15,6 +15,27 @@ function randomId(length) {
   
 const $ = document.querySelector.bind(document);
 
+function createRemoteVideo(id){
+    const videoBox = document.createElement('div');
+    videoBox.id = `videoBox-${id}`;
+
+    const newVideo = document.createElement('video');
+    newVideo.id = `video-${id}`;
+    newVideo.controls = true;
+    newVideo.autoplay = true;
+    newVideo.muted = true;
+    newVideo.style.width = "400px";
+    newVideo.style.height = "400px";
+
+    videoBox.append(newVideo);
+
+    $('#videoList').append(videoBox);
+}
+
+function removeRemoteVideo(id){
+    $( `#videoBox-${id}`).remove();
+}
+
 async function initSession(username, room) {
     const signalServer = `ws://192.168.97.138:8800`;
 
@@ -22,14 +43,13 @@ async function initSession(username, room) {
     session = Dugon.createSession(signalServer, room, myUserId, "", { username });
 
     session.onin = (userId, metadata) => {
-        console.log(userId, ' in');
-
-        const stream = new MediaStream();
-        streams.set(userId, stream);
+        console.log('in',userId);
+        createRemoteVideo(userId);
     };
 
     session.onout = userId => {
-        console.log(userId, ' out');
+        console.log('out',userId);
+        removeRemoteVideo(userId);
     };
 
     session.onclose = _ => {
@@ -51,31 +71,7 @@ async function initSession(username, room) {
     session.onmedia = (media, receiver) => {
         console.log('onmedia')
 
-        const stream = streams.get(receiver.userId);
-        if ($(`#videoBox-${receiver.userId}`)) {
-          stream.addTrack(media.track);
-        } else {
-
-          console.log('???', receiver.userId);
-          
-          const videoBox = document.createElement('div');
-          videoBox.id = `videoBox-${receiver.userId}`;
-
-    
-          const newVideo = document.createElement('video');
-          newVideo.controls = true;
-          newVideo.autoplay = true;
-          newVideo.muted = true;
-          newVideo.style.width = "400px";
-          newVideo.style.height = "400px";
-          
-          stream.addTrack(media.track);
-          newVideo.srcObject = stream;
-          videoBox.append(newVideo);
-    
-          $('#videoList').append(videoBox);
-        }
-    
+        media.play(`#video-${receiver.userId}`);
     };
 
 
@@ -98,17 +94,15 @@ async function initSession(username, room) {
 
 let videoSource;
 let audioSource;
-let localStream = new MediaStream();
-
+// let localStream = new MediaStream();
 
 async function main() {
     if(pub){
         videoSource = await Dugon.createVideoSource();
-        localStream.addTrack(videoSource.track);
+        videoSource.play('#localVideo');
     
         audioSource = await Dugon.createAudioSource();
-        localStream.addTrack(audioSource.track);
-        $('#localVideo').srcObject = localStream;
+        audioSource.play('#localVideo');
     }
 
     await initSession(randomId(5), roomId);
