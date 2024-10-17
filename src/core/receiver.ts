@@ -10,7 +10,7 @@ import Media from './media';
 import Sdp from './sdp';
 import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { Codec } from './codec';
-import RemoteSender from './remoteSender';
+import RemotePublisher from './remotePublisher';
 
 export default class MyReceiver extends Transport {
   pc: RTCPeerConnection;
@@ -25,7 +25,7 @@ export default class MyReceiver extends Transport {
   ondtls?: ((dtls: DTLSparameter) => void)
   onunsubscribed?: ((subscriber: Subscriber) => void)
 
-  remoteSenders = new Map<string, RemoteSender>();
+  remotePublishers = new Map<string, RemotePublisher>();
   constructor(id: string, remoteICECandidates: RemoteICECandidate[], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
     super(id, remoteICECandidates, remoteICEParameters, remoteDTLSParameters);
 
@@ -64,8 +64,8 @@ export default class MyReceiver extends Transport {
     return this.subscribers.find(s => s.id === id);
   }
 
-  getSubscriberBySenderId(senderId: string) {
-    return this.subscribers.find(s => s.senderId === senderId);
+  getSubscriberBySenderId(publisherId: string) {
+    return this.subscribers.find(s => s.publisherId === publisherId);
   }
 
   async _subscribeInternal(subscriber: Subscriber) {
@@ -98,10 +98,10 @@ export default class MyReceiver extends Transport {
 
   }
 
-  unsubscribeBySenderId(senderId: string) {
-    this.remoteSenders.delete(senderId);
+  unsubscribeBySenderId(publisherId: string) {
+    this.remotePublishers.delete(publisherId);
 
-    const receiver = this.subscribers.find(s => s.senderId === senderId);
+    const receiver = this.subscribers.find(s => s.publisherId === publisherId);
     if (receiver && receiver.available) {
       this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
     }

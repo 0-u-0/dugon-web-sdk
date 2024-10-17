@@ -6,7 +6,7 @@ import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './re
 import { Codec } from './codec';
 import Receiver from './receiver';
 import Subscriber from './subscriber';
-import RemoteSender from './remoteSender';
+import RemoteSender from './remotePublisher';
 import DugonMediaSource from './mediasource';
 import User from './user';
 
@@ -156,21 +156,21 @@ export default class Session {
     }
   }
 
-  unpublish(senderId: string) {
-    stringChecker(senderId, 'unpublish() senderId');
-    if (this.sender) this.sender.unpublish(senderId);
+  unpublish(publisherId: string) {
+    stringChecker(publisherId, 'unpublish() publisherId');
+    if (this.sender) this.sender.unpublish(publisherId);
 
   }
 
-  async subscribe(senderId: string) {
+  async subscribe(publisherId: string) {
     // stringChecker(receiverId, 'subscribe() receiverId');
     // if (this.receiver) this.receiver.subscribe(receiverId);
     if (this.receiver) {
-      const remoteSender = this.receiver.remoteSenders.get(senderId)
+      const remoteSender = this.receiver.remotePublishers.get(publisherId)
       if (remoteSender) {
         const parameters = await this.request('subscribe', remoteSender);
         const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
-        let receiver = this.receiver.addReceiver(senderId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
+        let receiver = this.receiver.addReceiver(publisherId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
         this.receiver.subscribe(receiver);
         //TODO(CC): remove onreceiver
         // if (this.onreceiver) this.onreceiver(receiver);
@@ -196,7 +196,7 @@ export default class Session {
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
-        senderId = receiver.senderId;
+        senderId = receiver.publisherId;
       }
     }
     if (transportId == '' && this.sender) {
@@ -230,16 +230,16 @@ export default class Session {
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
-        senderId = receiver.senderId;
+        senderId = receiver.publisherId;
       }
     }
     if (transportId == '' && this.sender) {
-      let sender = this.sender.getPublisher(id);
-      if (sender) {
-        sender.changeTrackState(true);
+      let publisher = this.sender.getPublisher(id);
+      if (publisher) {
+        publisher.changeTrackState(true);
         transportId = this.sender.id;
         role = 'pub';
-        senderId = sender.id;
+        senderId = publisher.id;
       }
     }
 
@@ -315,7 +315,7 @@ export default class Session {
           event: 'unsubscribe',
           data: {
             transportId: this.receiver!.id,
-            senderId: receiver.senderId,
+            senderId: receiver.publisherId,
           }
         })
       };
@@ -373,9 +373,9 @@ export default class Session {
         let remoteSender = data as RemoteSender;
 
         if (this.receiver) {
-          this.receiver.remoteSenders.set(remoteSender.senderId, remoteSender);
+          this.receiver.remotePublishers.set(remoteSender.publisherId, remoteSender);
           if (this.onsender) {
-            this.onsender(remoteSender.senderId, remoteSender.userId, remoteSender.metadata);
+            this.onsender(remoteSender.publisherId, remoteSender.userId, remoteSender.metadata);
           }
         }
 

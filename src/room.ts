@@ -47,16 +47,16 @@ class Room {
     this.session.publish(source,config);
   }
 
-  unpublish(senderId: string) {
-   this.session.unpublish(senderId);
+  unpublish(publisherId: string) {
+   this.session.unpublish(publisherId);
   }
 
-  async subscribe(senderId: string) {
-    this.session.subscribe(senderId);
+  async subscribe(publisherId: string) {
+    this.session.subscribe(publisherId);
   }
 
-  unsubscribe(senderId: string) {
-    this.session.unsubscribe(senderId);
+  unsubscribe(publisherId: string) {
+    this.session.unsubscribe(publisherId);
   }
 
   //senderId
