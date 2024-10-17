@@ -273,20 +273,20 @@ export default class Session {
         })
       };
 
-      this.sender.onpublisher = async (sender) => {
+      this.sender.onpublisher = async (publisher) => {
         const data = await this.socket!.request({
           event: 'publish',
           data: {
             transportId: this.sender!.id,
-            codec: sender.media!.toCodec(),
-            metadata: sender.metadata
+            codec: publisher.media!.toCodec(),
+            metadata: publisher.metadata
           }
         })
         const { senderId } = data as { senderId: string };
-        sender.id = senderId;
+        publisher.id = senderId;
         if (this.onsender) {
           // this.onsender(sender);
-          this.onsender(sender.id, this.userId, sender.metadata);
+          this.onsender(publisher.id, this.userId, publisher.metadata);
         }
       }
 
