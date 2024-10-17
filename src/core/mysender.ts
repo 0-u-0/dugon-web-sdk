@@ -12,7 +12,7 @@ import Sdp from './sdp';
 import { Metadata } from './metadata';
 
 
-export default class Publisher extends Transport {
+export default class MySender extends Transport {
   pc: RTCPeerConnection;
 
   asyncQueue = new AsyncQueue()

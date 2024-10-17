@@ -1,5 +1,5 @@
 import Socket from './socket';
-import Publisher from './publisher';
+import MySender from './mysender';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
@@ -38,7 +38,7 @@ export default class Session {
   metadata: Metadata
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
-  publisher?: Publisher;
+  sender?: MySender;
   subscriber?: Subscriber;
 
   users: Map<string, User>;
@@ -147,7 +147,7 @@ export default class Session {
 
       let codecCap = this.supportedCodecs![codec];
       if (codecCap) {
-        if (this.publisher) this.publisher.publish(source.track, codecCap, metadata, maxBitrate);
+        if (this.sender) this.sender.publish(source.track, codecCap, metadata, maxBitrate);
       } else {
         //TODO: 
       }
@@ -158,7 +158,7 @@ export default class Session {
 
   unpublish(senderId: string) {
     stringChecker(senderId, 'unpublish() senderId');
-    if (this.publisher) this.publisher.unpublish(senderId);
+    if (this.sender) this.sender.unpublish(senderId);
 
   }
 
@@ -199,11 +199,11 @@ export default class Session {
         senderId = receiver.senderId;
       }
     }
-    if (transportId == '' && this.publisher) {
-      let sender = this.publisher.getSender(id);
+    if (transportId == '' && this.sender) {
+      let sender = this.sender.getSender(id);
       if (sender) {
         sender.changeTrackState(false);
-        transportId = this.publisher.id;
+        transportId = this.sender.id;
         role = 'pub';
         senderId = sender.id;
       }
@@ -233,11 +233,11 @@ export default class Session {
         senderId = receiver.senderId;
       }
     }
-    if (transportId == '' && this.publisher) {
-      let sender = this.publisher.getSender(id);
+    if (transportId == '' && this.sender) {
+      let sender = this.sender.getSender(id);
       if (sender) {
         sender.changeTrackState(true);
-        transportId = this.publisher.id;
+        transportId = this.sender.id;
         role = 'pub';
         senderId = sender.id;
       }
@@ -256,28 +256,28 @@ export default class Session {
     const { id, iceCandidates, iceParameters, dtlsParameters } = transportParameters;
 
     if (role === 'pub') {
-      this.publisher = new Publisher(id, iceCandidates, iceParameters, dtlsParameters);
-      this.publisher.onunpublished = async sender => {
+      this.sender = new MySender(id, iceCandidates, iceParameters, dtlsParameters);
+      this.sender.onunpublished = async sender => {
         this.request('unpublish', {
-          transportId: this.publisher!.id,
+          transportId: this.sender!.id,
           senderId: sender.id
         })
         //FIXME: maybe add onunpublished in session
       };
 
-      this.publisher.ondtls = async (dtlsParameters) => {
+      this.sender.ondtls = async (dtlsParameters) => {
         this.request('dtls', {
-          transportId: this.publisher!.id,
+          transportId: this.sender!.id,
           role: 'pub',
           dtlsParameters
         })
       };
 
-      this.publisher.onsender = async (sender) => {
+      this.sender.onsender = async (sender) => {
         const data = await this.socket!.request({
           event: 'publish',
           data: {
-            transportId: this.publisher!.id,
+            transportId: this.sender!.id,
             codec: sender.media!.toCodec(),
             metadata: sender.metadata
           }
