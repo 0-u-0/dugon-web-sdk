@@ -1,7 +1,7 @@
 import { Metadata } from './metadata';
 import Media from './media';
 
-export default class Sender {
+export default class Publisher {
   id = ''
   media : Media | null = null;
   constructor(public track: MediaStreamTrack, public transceiver: RTCRtpTransceiver,public metadata: Metadata) {
@@ -28,7 +28,5 @@ export default class Sender {
   // get isStopped() {
   //   return this.transceiver.stopped;
   // }
-
-
 
 }

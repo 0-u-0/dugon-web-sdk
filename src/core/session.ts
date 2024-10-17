@@ -1,11 +1,11 @@
 import Socket from './socket';
-import MySender from './mysender';
+import Sender from './mysender';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
 import { Codec } from './codec';
 import MyReceiver from './myreceiver';
-import Receiver from './receiver';
+import Receiver from './subscriber';
 import RemoteSender from './remoteSender';
 import DugonMediaSource from './mediasource';
 import User from './user';
@@ -38,7 +38,7 @@ export default class Session {
   metadata: Metadata
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
-  sender?: MySender;
+  sender?: Sender;
   receiver?: MyReceiver;
 
   users: Map<string, User>;
@@ -192,7 +192,7 @@ export default class Session {
     let senderId = '';
 
     if (this.receiver) {
-      let receiver = this.receiver.getReceiverBySenderId(id);
+      let receiver = this.receiver.getSubscriberBySenderId(id);
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
@@ -200,7 +200,7 @@ export default class Session {
       }
     }
     if (transportId == '' && this.sender) {
-      let sender = this.sender.getSender(id);
+      let sender = this.sender.getPublisher(id);
       if (sender) {
         sender.changeTrackState(false);
         transportId = this.sender.id;
@@ -226,7 +226,7 @@ export default class Session {
     let senderId = '';
 
     if (this.receiver) {
-      let receiver = this.receiver.getReceiverBySenderId(id);
+      let receiver = this.receiver.getSubscriberBySenderId(id);
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
@@ -234,7 +234,7 @@ export default class Session {
       }
     }
     if (transportId == '' && this.sender) {
-      let sender = this.sender.getSender(id);
+      let sender = this.sender.getPublisher(id);
       if (sender) {
         sender.changeTrackState(true);
         transportId = this.sender.id;
@@ -256,7 +256,7 @@ export default class Session {
     const { id, iceCandidates, iceParameters, dtlsParameters } = transportParameters;
 
     if (role === 'pub') {
-      this.sender = new MySender(id, iceCandidates, iceParameters, dtlsParameters);
+      this.sender = new Sender(id, iceCandidates, iceParameters, dtlsParameters);
       this.sender.onunpublished = async sender => {
         this.request('unpublish', {
           transportId: this.sender!.id,
@@ -273,7 +273,7 @@ export default class Session {
         })
       };
 
-      this.sender.onsender = async (sender) => {
+      this.sender.onpublisher = async (sender) => {
         const data = await this.socket!.request({
           event: 'publish',
           data: {
@@ -325,7 +325,7 @@ export default class Session {
 
   private remoteSenderChanged(senderId: string, isPaused: boolean) {
     if (this.receiver) {
-      let receiver = this.receiver.getReceiverBySenderId(senderId);
+      let receiver = this.receiver.getSubscriberBySenderId(senderId);
       if (receiver) {
         receiver.senderPaused = isPaused;
         if (this.onchange) this.onchange(receiver, isPaused);

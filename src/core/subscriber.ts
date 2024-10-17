@@ -2,7 +2,7 @@ import Media from './media';
 import { Codec } from './codec';
 import { StrDic } from './remoteParameters';
 
-export default class Receiver {
+export default class Subscriber {
   transceiver?: RTCRtpTransceiver;
   senderPaused:boolean;
   constructor(public mid: string, public senderId: string, public userId: string,

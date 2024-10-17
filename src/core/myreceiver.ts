@@ -3,7 +3,7 @@ import sdpTransform from 'sdp-transform';
 import AsyncQueue from './asyncQueue';
 import Transport from './transport';
 
-import Receiver from './receiver';
+import Subscriber from './subscriber';
 
 import { getDtls } from './utils';
 import Media from './media';
@@ -15,15 +15,15 @@ import RemoteSender from './remoteSender';
 export default class MyReceiver extends Transport {
   pc: RTCPeerConnection;
 
-  receivers: Receiver[] = [];
+  subscribers: Subscriber[] = [];
   asyncQueue = new AsyncQueue();
   isGotDtls = false;
   currentMid = 0;
   //event
-  ontrack?: ((track: MediaStreamTrack, receiver: Receiver) => void)
-  onreceiver?: ((receiver: Receiver) => void)
+  ontrack?: ((track: MediaStreamTrack, subscriber: Subscriber) => void)
+  onsubscriber?: ((subscriber: Subscriber) => void)
   ondtls?: ((dtls: DTLSparameter) => void)
-  onunsubscribed?: ((receiver: Receiver) => void)
+  onunsubscribed?: ((subscriber: Subscriber) => void)
 
   remoteSenders = new Map<string, RemoteSender>();
   constructor(id: string, remoteICECandidates: RemoteICECandidate[], remoteICEParameters: StrDic, remoteDTLSParameters: StrDic) {
@@ -36,9 +36,9 @@ export default class MyReceiver extends Transport {
   }
 
   unsubscribeByUserId(userId: string) {
-    for (let receiver of this.receivers) {
-      if (userId === receiver.userId) {
-        this.unsubscribeByReceiverId(receiver.id);
+    for (let subscriber of this.subscribers) {
+      if (userId === subscriber.userId) {
+        this.unsubscribeByReceiverId(subscriber.id);
       }
     }
   }
@@ -49,28 +49,28 @@ export default class MyReceiver extends Transport {
 
     const media = Media.create(mid, codec, this.remoteICEParameters, this.remoteICECandidates, receiverId);
 
-    const receiver = new Receiver(mid, senderId, userId, receiverId, codec, metadata, media);
+    const subscriber = new Subscriber(mid, senderId, userId, receiverId, codec, metadata, media);
 
-    this.receivers.push(receiver);
-    return receiver;
+    this.subscribers.push(subscriber);
+    return subscriber;
   }
 
   //TODO(CC): use receiver
-  subscribe(receiver: Receiver) {
-    this.asyncQueue.push({ execObj: this, taskFunc: this._subscribeInternal, parameters: [receiver] });
+  subscribe(subscriber: Subscriber) {
+    this.asyncQueue.push({ execObj: this, taskFunc: this._subscribeInternal, parameters: [subscriber] });
   }
 
-  getReceiver(id: string) {
-    return this.receivers.find(r => r.id === id);
+  getSubscriber(id: string) {
+    return this.subscribers.find(s => s.id === id);
   }
 
-  getReceiverBySenderId(senderId: string) {
-    return this.receivers.find(r => r.senderId === senderId);
+  getSubscriberBySenderId(senderId: string) {
+    return this.subscribers.find(s => s.senderId === senderId);
   }
 
-  async _subscribeInternal(receiver: Receiver) {
+  async _subscribeInternal(subscriber: Subscriber) {
 
-    receiver.media.direction = "sendonly";
+    subscriber.media.direction = "sendonly";
     let remoteSdp = this.generateSdp();
 
     await this.pc.setRemoteDescription(remoteSdp);
@@ -79,11 +79,11 @@ export default class MyReceiver extends Transport {
     await this.pc.setLocalDescription(answer);
 
     //track
-    const transceiver = await this.pc.getTransceivers().find(t => t.mid === receiver.mid);
-    receiver.transceiver = transceiver;
+    const transceiver = await this.pc.getTransceivers().find(t => t.mid === subscriber.mid);
+    subscriber.transceiver = transceiver;
 
 
-    if (this.ontrack) this.ontrack(transceiver!.receiver.track, receiver);
+    if (this.ontrack) this.ontrack(transceiver!.receiver.track, subscriber);
 
     //TODO: receiver resume
     if (!this.isGotDtls) {
@@ -101,20 +101,20 @@ export default class MyReceiver extends Transport {
   unsubscribeBySenderId(senderId: string) {
     this.remoteSenders.delete(senderId);
 
-    const receiver = this.receivers.find(r => r.senderId === senderId);
+    const receiver = this.subscribers.find(s => s.senderId === senderId);
     if (receiver && receiver.available) {
       this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
     }
   }
 
   unsubscribeByReceiverId(receiverId: string) {
-    const receiver = this.receivers.find(r => r.id === receiverId);
+    const receiver = this.subscribers.find(r => r.id === receiverId);
     if (receiver && receiver.available) {
       this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
     }
   }
 
-  async _unsubscribeInternal(receiver: Receiver) {
+  async _unsubscribeInternal(receiver: Subscriber) {
 
     receiver.media.direction = 'inactive';
     let remoteSdp = this.generateSdp();
@@ -138,7 +138,7 @@ export default class MyReceiver extends Transport {
       hash: this.remoteDTLSParameters.value
     }
 
-    for (let receiver of this.receivers) {
+    for (let receiver of this.subscribers) {
       sdpObj.medias.push(receiver.media)
     }
 
