@@ -12,7 +12,7 @@ import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { Codec } from './codec';
 import RemoteSender from './remoteSender';
 
-export default class Subscriber extends Transport {
+export default class MyReceiver extends Transport {
   pc: RTCPeerConnection;
 
   receivers: Receiver[] = [];

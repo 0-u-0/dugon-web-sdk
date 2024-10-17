@@ -4,7 +4,7 @@ import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
 import { Codec } from './codec';
-import Subscriber from './subscriber';
+import MyReceiver from './myreceiver';
 import Receiver from './receiver';
 import RemoteSender from './remoteSender';
 import DugonMediaSource from './mediasource';
@@ -39,7 +39,7 @@ export default class Session {
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
   sender?: MySender;
-  subscriber?: Subscriber;
+  receiver?: MyReceiver;
 
   users: Map<string, User>;
   //event
@@ -164,14 +164,14 @@ export default class Session {
 
   async subscribe(senderId: string) {
     // stringChecker(receiverId, 'subscribe() receiverId');
-    // if (this.subscriber) this.subscriber.subscribe(receiverId);
-    if (this.subscriber) {
-      const remoteSender = this.subscriber.remoteSenders.get(senderId)
+    // if (this.receiver) this.receiver.subscribe(receiverId);
+    if (this.receiver) {
+      const remoteSender = this.receiver.remoteSenders.get(senderId)
       if (remoteSender) {
         const parameters = await this.request('subscribe', remoteSender);
         const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
-        let receiver = this.subscriber.addReceiver(senderId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
-        this.subscriber.subscribe(receiver);
+        let receiver = this.receiver.addReceiver(senderId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
+        this.receiver.subscribe(receiver);
         //TODO(CC): remove onreceiver
         // if (this.onreceiver) this.onreceiver(receiver);
       }
@@ -181,7 +181,7 @@ export default class Session {
 
   unsubscribe(senderId: string) {
     stringChecker(senderId, 'unsubscribe() senderId');
-    if (this.subscriber) this.subscriber.unsubscribeBySenderId(senderId);
+    if (this.receiver) this.receiver.unsubscribeBySenderId(senderId);
   }
 
   //senderId
@@ -191,10 +191,10 @@ export default class Session {
     let role = '';
     let senderId = '';
 
-    if (this.subscriber) {
-      let receiver = this.subscriber.getReceiverBySenderId(id);
+    if (this.receiver) {
+      let receiver = this.receiver.getReceiverBySenderId(id);
       if (receiver) {
-        transportId = this.subscriber.id;
+        transportId = this.receiver.id;
         role = 'sub';
         senderId = receiver.senderId;
       }
@@ -225,10 +225,10 @@ export default class Session {
     let role = '';
     let senderId = '';
 
-    if (this.subscriber) {
-      let receiver = this.subscriber.getReceiverBySenderId(id);
+    if (this.receiver) {
+      let receiver = this.receiver.getReceiverBySenderId(id);
       if (receiver) {
-        transportId = this.subscriber.id;
+        transportId = this.receiver.id;
         role = 'sub';
         senderId = receiver.senderId;
       }
@@ -291,30 +291,30 @@ export default class Session {
       }
 
     } else if (role === 'sub') {
-      this.subscriber = new Subscriber(id, iceCandidates, iceParameters, dtlsParameters);
+      this.receiver = new MyReceiver(id, iceCandidates, iceParameters, dtlsParameters);
 
-      this.subscriber.ondtls = async dtlsParameters => {
+      this.receiver.ondtls = async dtlsParameters => {
         await this.socket!.request({
           event: 'dtls',
           data: {
-            transportId: this.subscriber!.id,
+            transportId: this.receiver!.id,
             role: 'sub',
             dtlsParameters
           }
         });
       };
 
-      this.subscriber.ontrack = (track, receiver) => {
+      this.receiver.ontrack = (track, receiver) => {
         // this.resume(receiver.id);
         if (this.onmedia) this.onmedia(new DugonMediaSource(track), receiver);
       };
 
-      this.subscriber.onunsubscribed = receiver => {
+      this.receiver.onunsubscribed = receiver => {
         if (this.onunsubscribed) this.onunsubscribed(receiver);
         this.socket!.request({
           event: 'unsubscribe',
           data: {
-            transportId: this.subscriber!.id,
+            transportId: this.receiver!.id,
             senderId: receiver.senderId,
           }
         })
@@ -324,8 +324,8 @@ export default class Session {
   }
 
   private remoteSenderChanged(senderId: string, isPaused: boolean) {
-    if (this.subscriber) {
-      let receiver = this.subscriber.getReceiverBySenderId(senderId);
+    if (this.receiver) {
+      let receiver = this.receiver.getReceiverBySenderId(senderId);
       if (receiver) {
         receiver.senderPaused = isPaused;
         if (this.onchange) this.onchange(receiver, isPaused);
@@ -359,8 +359,8 @@ export default class Session {
           const metadata = user.metadata;
           this.users.delete(userId);
           //TODO: release all receiver
-          if (this.subscriber) {
-            this.subscriber.unsubscribeByUserId(userId);
+          if (this.receiver) {
+            this.receiver.unsubscribeByUserId(userId);
           }
           if (this.onuser) this.onuser(userId, 'out',metadata);
         }else{
@@ -372,8 +372,8 @@ export default class Session {
       case 'publish': {
         let remoteSender = data as RemoteSender;
 
-        if (this.subscriber) {
-          this.subscriber.remoteSenders.set(remoteSender.senderId, remoteSender);
+        if (this.receiver) {
+          this.receiver.remoteSenders.set(remoteSender.senderId, remoteSender);
           if (this.onsender) {
             this.onsender(remoteSender.senderId, remoteSender.userId, remoteSender.metadata);
           }
@@ -383,8 +383,8 @@ export default class Session {
       };
       case 'unpublish': {
         let { senderId, userId } = data;
-        if (this.subscriber) {
-          this.subscriber.unsubscribeBySenderId(senderId);
+        if (this.receiver) {
+          this.receiver.unsubscribeBySenderId(senderId);
         }
 
         break;
