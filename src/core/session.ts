@@ -1,11 +1,11 @@
 import Socket from './socket';
-import Sender from './mysender';
+import Sender from './sender';
 import { stringChecker } from './utils';
 import { Metadata, metadataChecker } from './metadata'
 import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './remoteParameters';
 import { Codec } from './codec';
-import MyReceiver from './myreceiver';
-import Receiver from './subscriber';
+import Receiver from './receiver';
+import Subscriber from './subscriber';
 import RemoteSender from './remoteSender';
 import DugonMediaSource from './mediasource';
 import User from './user';
@@ -39,7 +39,7 @@ export default class Session {
   socket: Socket | null = null;
   supportedCodecs: CodecDic | null = null;
   sender?: Sender;
-  receiver?: MyReceiver;
+  receiver?: Receiver;
 
   users: Map<string, User>;
   //event
@@ -47,10 +47,10 @@ export default class Session {
   onsender: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
   onuser: ((userId: string, state: string, metadata: StrDic) => void) | null = null;
   onout?: ((userId: string) => void);
-  onmedia?: ((source: DugonMediaSource, receiver: Receiver) => void);
-  onunsubscribed?: ((receiver: Receiver) => void);
-  onreceiver?: ((receiver: Receiver) => void)
-  onchange?: ((receiver: Receiver, isPaused: boolean) => void)
+  onmedia?: ((source: DugonMediaSource, subscriber: Subscriber) => void);
+  onunsubscribed?: ((subscriber: Subscriber) => void);
+  // onreceiver?: ((receiver: Receiver) => void)
+  onchange?: ((subscriber: Subscriber, isPaused: boolean) => void)
   constructor(public readonly url: string, public sessionId: string, public userId: string, public tokenId: string, metadata: any) {
 
     stringChecker(this.url, 'url');
@@ -291,7 +291,7 @@ export default class Session {
       }
 
     } else if (role === 'sub') {
-      this.receiver = new MyReceiver(id, iceCandidates, iceParameters, dtlsParameters);
+      this.receiver = new Receiver(id, iceCandidates, iceParameters, dtlsParameters);
 
       this.receiver.ondtls = async dtlsParameters => {
         await this.socket!.request({
@@ -304,9 +304,9 @@ export default class Session {
         });
       };
 
-      this.receiver.ontrack = (track, receiver) => {
+      this.receiver.ontrack = (track, subscriber) => {
         // this.resume(receiver.id);
-        if (this.onmedia) this.onmedia(new DugonMediaSource(track), receiver);
+        if (this.onmedia) this.onmedia(new DugonMediaSource(track), subscriber);
       };
 
       this.receiver.onunsubscribed = receiver => {
