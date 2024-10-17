@@ -8,14 +8,14 @@ function randomId(length) {
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
     for (var i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
 }
-  
+
 const $ = document.querySelector.bind(document);
 
-function createRemoteVideo(id){
+function createRemoteVideo(id) {
     const videoBox = document.createElement('div');
     videoBox.id = `videoBox-${id}`;
 
@@ -32,8 +32,8 @@ function createRemoteVideo(id){
     $('#videoList').append(videoBox);
 }
 
-function removeRemoteVideo(id){
-    $( `#videoBox-${id}`).remove();
+function removeRemoteVideo(id) {
+    $(`#videoBox-${id}`).remove();
 }
 
 async function initSession(username, room) {
@@ -42,14 +42,13 @@ async function initSession(username, room) {
     const myUserId = randomId(10);
     session = Dugon.createSession(signalServer, room, myUserId, "", { username });
 
-    session.onin = (userId, metadata) => {
-        console.log('in',userId);
-        createRemoteVideo(userId);
-    };
-
-    session.onout = userId => {
-        console.log('out',userId);
-        removeRemoteVideo(userId);
+    session.onuser = (userId, state, metadata) => {
+        console.log('user', userId, state);
+        if (state === 'in') {
+            createRemoteVideo(userId);
+        } else if (state === 'out') {
+            removeRemoteVideo(userId);
+        }
     };
 
     session.onclose = _ => {
@@ -59,9 +58,9 @@ async function initSession(username, room) {
     session.onsender = (senderId, remoteUserId, metadata) => {
         if (remoteUserId == myUserId) {
             console.log('local', senderId, metadata);
-          } else {
+        } else {
             session.subscribe(senderId);
-          }
+        }
     };
     // remote sender state changed
     session.onchange = (receiver, isPaused) => {
@@ -81,11 +80,11 @@ async function initSession(username, room) {
 
     await session.connect({ pub: pub, sub: true });
 
-    if(pub){
+    if (pub) {
         if (audioSource) {
             session.publish(audioSource, { metadata: { name: 'audio' } });
         }
-    
+
         if (videoSource) {
             session.publish(videoSource, { metadata: { name: 'video' } });
         }
@@ -97,10 +96,10 @@ let audioSource;
 // let localStream = new MediaStream();
 
 async function main() {
-    if(pub){
+    if (pub) {
         videoSource = await Dugon.createVideoSource();
         videoSource.play('#localVideo');
-    
+
         audioSource = await Dugon.createAudioSource();
         audioSource.play('#localVideo');
     }

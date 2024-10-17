@@ -8,6 +8,7 @@ import Subscriber from './subscriber';
 import Receiver from './receiver';
 import RemoteSender from './remoteSender';
 import DugonMediaSource from './mediasource';
+import User from './user';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -39,10 +40,12 @@ export default class Session {
   supportedCodecs: CodecDic | null = null;
   publisher?: Publisher;
   subscriber?: Subscriber;
+
+  users: Map<string, User>;
   //event
   onclose: (() => void) | null = null;
   onsender: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
-  onin: ((userId: string, metadata: StrDic) => void) | null = null;
+  onuser: ((userId: string, state: string, metadata: StrDic) => void) | null = null;
   onout?: ((userId: string) => void);
   onmedia?: ((source: DugonMediaSource, receiver: Receiver) => void);
   onunsubscribed?: ((receiver: Receiver) => void);
@@ -56,6 +59,7 @@ export default class Session {
     stringChecker(this.tokenId, 'tokenId');
     metadataChecker(metadata);
     this.metadata = metadata;
+    this.users = new Map();
 
   }
 
@@ -66,7 +70,7 @@ export default class Session {
       this.socket = new Socket(this.url, {
         'roomId': this.sessionId,
         'tokenId': this.tokenId,
-        'userId':this.userId,
+        'userId': this.userId,
         'metadata': this.metadata,
       });
 
@@ -333,18 +337,36 @@ export default class Session {
     switch (event) {
       case 'join': {
         let { userId, metadata } = data as { userId: string, metadata: StrDic };
-        if (this.onin) {
-          this.onin(userId, metadata);
+        if (!this.users.has(userId)) {
+          const user = new User(userId, metadata);
+          this.users.set(userId, user);
+
+          if (this.onuser) {
+            this.onuser(userId, 'in', metadata);
+          }
+        } else {
+          // TODO(cc): 10/17/24 error
         }
+
         break;
       };
       case 'leave': {
         let { userId } = data as { userId: string };
-        //TODO: release all receiver
-        if (this.subscriber) {
-          this.subscriber.unsubscribeByUserId(userId);
+
+        const user = this.users.get(userId);
+
+        if(user !== undefined){
+          const metadata = user.metadata;
+          this.users.delete(userId);
+          //TODO: release all receiver
+          if (this.subscriber) {
+            this.subscriber.unsubscribeByUserId(userId);
+          }
+          if (this.onuser) this.onuser(userId, 'out',metadata);
+        }else{
+          // TODO(cc): 10/17/24 error
         }
-        if (this.onout) this.onout(userId);
+        
         break;
       };
       case 'publish': {
