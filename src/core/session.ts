@@ -6,7 +6,7 @@ import { RemoteICECandidate, TransportParameters, StrDic, StrKeyDic } from './re
 import { Codec } from './codec';
 import Receiver from './receiver';
 import Subscriber from './subscriber';
-import RemoteSender from './remotePublisher';
+import RemotePublisher from './remotePublisher';
 import DugonMediaSource from './mediasource';
 import User from './user';
 
@@ -44,7 +44,7 @@ export default class Session {
   users: Map<string, User>;
   //event
   onclose: (() => void) | null = null;
-  onsender: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
+  onpub: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
   onuser: ((userId: string, state: string, metadata: StrDic) => void) | null = null;
   onout?: ((userId: string) => void);
   onmedia?: ((source: DugonMediaSource, subscriber: Subscriber) => void);
@@ -284,9 +284,9 @@ export default class Session {
         })
         const { senderId } = data as { senderId: string };
         publisher.id = senderId;
-        if (this.onsender) {
+        if (this.onpub) {
           // this.onsender(sender);
-          this.onsender(publisher.id, this.userId, publisher.metadata);
+          this.onpub(publisher.id, this.userId, publisher.metadata);
         }
       }
 
@@ -370,12 +370,12 @@ export default class Session {
         break;
       };
       case 'publish': {
-        let remoteSender = data as RemoteSender;
+        let remotePublisher = data as RemotePublisher;
 
         if (this.receiver) {
-          this.receiver.remotePublishers.set(remoteSender.publisherId, remoteSender);
-          if (this.onsender) {
-            this.onsender(remoteSender.publisherId, remoteSender.userId, remoteSender.metadata);
+          this.receiver.remotePublishers.set(remotePublisher.publisherId, remotePublisher);
+          if (this.onpub) {
+            this.onpub(remotePublisher.publisherId, remotePublisher.userId, remotePublisher.metadata);
           }
         }
 
