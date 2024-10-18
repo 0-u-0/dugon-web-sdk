@@ -55,11 +55,11 @@ async function initSession(username, room) {
 
     };
 
-    session.onsender = (senderId, remoteUserId, metadata) => {
+    session.onpub = (pubId, remoteUserId, metadata) => {
         if (remoteUserId == myUserId) {
-            console.log('local', senderId, metadata);
+            console.log('local', pubId, metadata);
         } else {
-            session.subscribe(senderId);
+            session.subscribe(pubId);
         }
     };
     // remote sender state changed

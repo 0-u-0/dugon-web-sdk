@@ -44,7 +44,7 @@ export default class Session {
   users: Map<string, User>;
   //event
   onclose: (() => void) | null = null;
-  onpub: ((senderId: string, userId: string, metadata: StrDic) => void) | null = null;
+  onpub: ((publisherId: string, userId: string, metadata: StrDic) => void) | null = null;
   onuser: ((userId: string, state: string, metadata: StrDic) => void) | null = null;
   onout?: ((userId: string) => void);
   onmedia?: ((source: DugonMediaSource, subscriber: Subscriber) => void);
@@ -166,11 +166,11 @@ export default class Session {
     // stringChecker(receiverId, 'subscribe() receiverId');
     // if (this.receiver) this.receiver.subscribe(receiverId);
     if (this.receiver) {
-      const remoteSender = this.receiver.remotePublishers.get(publisherId)
-      if (remoteSender) {
-        const parameters = await this.request('subscribe', remoteSender);
-        const { codec, receiverId } = parameters as { codec: Codec, senderId: string, receiverId: string }
-        let subscriber = this.receiver.addSub(publisherId, remoteSender.userId, receiverId, codec, remoteSender.metadata);
+      const remotePublisher = this.receiver.remotePublishers.get(publisherId)
+      if (remotePublisher) {
+        const parameters = await this.request('subscribe', remotePublisher);
+        const { codec, receiverId } = parameters as { codec: Codec, publisherId: string, receiverId: string }
+        let subscriber = this.receiver.addSub(publisherId, remotePublisher.userId, receiverId, codec, remotePublisher.metadata);
         this.receiver.subscribe(subscriber);
         //TODO(CC): remove onreceiver
         // if (this.onreceiver) this.onreceiver(receiver);
@@ -212,7 +212,7 @@ export default class Session {
     if (transportId != '') {
       this.request('pause', {
         transportId,
-        senderId:publisherId,
+        publisherId,
         role
       })
     }
@@ -223,14 +223,14 @@ export default class Session {
     stringChecker(id, 'resume() id');
     let transportId = '';
     let role = '';
-    let senderId = '';
+    let publisherId = '';
 
     if (this.receiver) {
       let receiver = this.receiver.getSubscriberByPublisherId(id);
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
-        senderId = receiver.publisherId;
+        publisherId = receiver.publisherId;
       }
     }
     if (transportId == '' && this.sender) {
@@ -239,14 +239,14 @@ export default class Session {
         publisher.changeTrackState(true);
         transportId = this.sender.id;
         role = 'pub';
-        senderId = publisher.id;
+        publisherId = publisher.id;
       }
     }
 
     if (transportId != '') {
       this.request('resume', {
         transportId,
-        senderId,
+        publisherId,
         role
       })
     }
@@ -257,10 +257,10 @@ export default class Session {
 
     if (role === 'pub') {
       this.sender = new Sender(id, iceCandidates, iceParameters, dtlsParameters);
-      this.sender.onunpublished = async sender => {
+      this.sender.onunpublished = async publisher => {
         this.request('unpublish', {
           transportId: this.sender!.id,
-          senderId: sender.id
+          publisherId: publisher.id
         })
         //FIXME: maybe add onunpublished in session
       };
@@ -282,8 +282,8 @@ export default class Session {
             metadata: publisher.metadata
           }
         })
-        const { senderId } = data as { senderId: string };
-        publisher.id = senderId;
+        const { publisherId } = data as { publisherId: string };
+        publisher.id = publisherId;
         if (this.onpub) {
           // this.onsender(sender);
           this.onpub(publisher.id, this.userId, publisher.metadata);
@@ -315,7 +315,7 @@ export default class Session {
           event: 'unsubscribe',
           data: {
             transportId: this.receiver!.id,
-            senderId: receiver.publisherId,
+            publisherId: receiver.publisherId,
           }
         })
       };
@@ -323,9 +323,9 @@ export default class Session {
     }
   }
 
-  private remoteSenderChanged(senderId: string, isPaused: boolean) {
+  private remotePublisherChanged(publisherId: string, isPaused: boolean) {
     if (this.receiver) {
-      let receiver = this.receiver.getSubscriberByPublisherId(senderId);
+      let receiver = this.receiver.getSubscriberByPublisherId(publisherId);
       if (receiver) {
         receiver.senderPaused = isPaused;
         if (this.onchange) this.onchange(receiver, isPaused);
@@ -382,21 +382,21 @@ export default class Session {
         break;
       };
       case 'unpublish': {
-        let { senderId, userId } = data;
+        let { publisherId, userId } = data;
         if (this.receiver) {
-          this.receiver.unsubscribeByPublisherId(senderId);
+          this.receiver.unsubscribeByPublisherId(publisherId);
         }
 
         break;
       }
       case 'pause': {
-        let { senderId } = data;
-        this.remoteSenderChanged(senderId, true);
+        let { publisherId } = data;
+        this.remotePublisherChanged(publisherId, true);
         break;
       }
       case 'resume': {
-        let { senderId } = data;
-        this.remoteSenderChanged(senderId, false);
+        let { publisherId } = data;
+        this.remotePublisherChanged(publisherId, false);
         break;
       }
       default: {

@@ -59,12 +59,12 @@ class Room {
     this.session.unsubscribe(publisherId);
   }
 
-  //senderId
+  //publisherId
   pause(id: string) {
     this.session.pause(id);
   }
 
-  //senderId
+  //publisherId
   resume(id: string) {
     this.session.resume(id);
   }
