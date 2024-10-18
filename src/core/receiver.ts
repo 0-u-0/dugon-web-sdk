@@ -12,7 +12,7 @@ import { RemoteICECandidate, StrDic, DTLSparameter } from './remoteParameters';
 import { Codec } from './codec';
 import RemotePublisher from './remotePublisher';
 
-export default class MyReceiver extends Transport {
+export default class Receiver extends Transport {
   pc: RTCPeerConnection;
 
   subscribers: Subscriber[] = [];
@@ -43,13 +43,13 @@ export default class MyReceiver extends Transport {
     }
   }
 
-  addReceiver(senderId: string, userId: string, receiverId: string,
+  addReceiver(publisherId: string, userId: string, receiverId: string,
     codec: Codec, metadata: StrDic) {
     const mid = String(this.currentMid++);
 
     const media = Media.create(mid, codec, this.remoteICEParameters, this.remoteICECandidates, receiverId);
 
-    const subscriber = new Subscriber(mid, senderId, userId, receiverId, codec, metadata, media);
+    const subscriber = new Subscriber(mid, publisherId, userId, receiverId, codec, metadata, media);
 
     this.subscribers.push(subscriber);
     return subscriber;
@@ -64,7 +64,7 @@ export default class MyReceiver extends Transport {
     return this.subscribers.find(s => s.id === id);
   }
 
-  getSubscriberBySenderId(publisherId: string) {
+  getSubscriberByPublisherId(publisherId: string) {
     return this.subscribers.find(s => s.publisherId === publisherId);
   }
 
@@ -98,7 +98,7 @@ export default class MyReceiver extends Transport {
 
   }
 
-  unsubscribeBySenderId(publisherId: string) {
+  unsubscribeByPublisherId(publisherId: string) {
     this.remotePublishers.delete(publisherId);
 
     const receiver = this.subscribers.find(s => s.publisherId === publisherId);

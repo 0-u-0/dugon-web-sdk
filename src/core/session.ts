@@ -179,24 +179,24 @@ export default class Session {
 
   }
 
-  unsubscribe(senderId: string) {
-    stringChecker(senderId, 'unsubscribe() senderId');
-    if (this.receiver) this.receiver.unsubscribeBySenderId(senderId);
+  unsubscribe(publisherId: string) {
+    stringChecker(publisherId, 'unsubscribe() publisherId');
+    if (this.receiver) this.receiver.unsubscribeByPublisherId(publisherId);
   }
 
-  //senderId
+  //publisherId
   pause(id: string) {
     stringChecker(id, 'pause() id');
     let transportId = '';
     let role = '';
-    let senderId = '';
+    let publisherId = '';
 
     if (this.receiver) {
-      let receiver = this.receiver.getSubscriberBySenderId(id);
+      let receiver = this.receiver.getSubscriberByPublisherId(id);
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
-        senderId = receiver.publisherId;
+        publisherId = receiver.publisherId;
       }
     }
     if (transportId == '' && this.sender) {
@@ -205,20 +205,20 @@ export default class Session {
         sender.changeTrackState(false);
         transportId = this.sender.id;
         role = 'pub';
-        senderId = sender.id;
+        publisherId = sender.id;
       }
     }
 
     if (transportId != '') {
       this.request('pause', {
         transportId,
-        senderId,
+        senderId:publisherId,
         role
       })
     }
   }
 
-  //senderId
+  //publisherId
   resume(id: string) {
     stringChecker(id, 'resume() id');
     let transportId = '';
@@ -226,7 +226,7 @@ export default class Session {
     let senderId = '';
 
     if (this.receiver) {
-      let receiver = this.receiver.getSubscriberBySenderId(id);
+      let receiver = this.receiver.getSubscriberByPublisherId(id);
       if (receiver) {
         transportId = this.receiver.id;
         role = 'sub';
@@ -325,7 +325,7 @@ export default class Session {
 
   private remoteSenderChanged(senderId: string, isPaused: boolean) {
     if (this.receiver) {
-      let receiver = this.receiver.getSubscriberBySenderId(senderId);
+      let receiver = this.receiver.getSubscriberByPublisherId(senderId);
       if (receiver) {
         receiver.senderPaused = isPaused;
         if (this.onchange) this.onchange(receiver, isPaused);
@@ -384,7 +384,7 @@ export default class Session {
       case 'unpublish': {
         let { senderId, userId } = data;
         if (this.receiver) {
-          this.receiver.unsubscribeBySenderId(senderId);
+          this.receiver.unsubscribeByPublisherId(senderId);
         }
 
         break;
