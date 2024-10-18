@@ -38,18 +38,18 @@ export default class Receiver extends Transport {
   unsubscribeByUserId(userId: string) {
     for (let subscriber of this.subscribers) {
       if (userId === subscriber.userId) {
-        this.unsubscribeByReceiverId(subscriber.id);
+        this.unsubscribeBySubscriberId(subscriber.id);
       }
     }
   }
 
-  addReceiver(publisherId: string, userId: string, receiverId: string,
+  addSub(publisherId: string, userId: string, subscriberId: string,
     codec: Codec, metadata: StrDic) {
     const mid = String(this.currentMid++);
 
-    const media = Media.create(mid, codec, this.remoteICEParameters, this.remoteICECandidates, receiverId);
+    const media = Media.create(mid, codec, this.remoteICEParameters, this.remoteICECandidates, subscriberId);
 
-    const subscriber = new Subscriber(mid, publisherId, userId, receiverId, codec, metadata, media);
+    const subscriber = new Subscriber(mid, publisherId, userId, subscriberId, codec, metadata, media);
 
     this.subscribers.push(subscriber);
     return subscriber;
@@ -101,29 +101,29 @@ export default class Receiver extends Transport {
   unsubscribeByPublisherId(publisherId: string) {
     this.remotePublishers.delete(publisherId);
 
-    const receiver = this.subscribers.find(s => s.publisherId === publisherId);
-    if (receiver && receiver.available) {
-      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
+    const subscriber = this.subscribers.find(s => s.publisherId === publisherId);
+    if (subscriber && subscriber.available) {
+      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [subscriber] });
     }
   }
 
-  unsubscribeByReceiverId(receiverId: string) {
-    const receiver = this.subscribers.find(r => r.id === receiverId);
-    if (receiver && receiver.available) {
-      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [receiver] });
+  unsubscribeBySubscriberId(subscriberId: string) {
+    const subscriber = this.subscribers.find(r => r.id === subscriberId);
+    if (subscriber && subscriber.available) {
+      this.asyncQueue.push({ execObj: this, taskFunc: this._unsubscribeInternal, parameters: [subscriber] });
     }
   }
 
-  async _unsubscribeInternal(receiver: Subscriber) {
+  async _unsubscribeInternal(subscriber: Subscriber) {
 
-    receiver.media.direction = 'inactive';
+    subscriber.media.direction = 'inactive';
     let remoteSdp = this.generateSdp();
 
     await this.pc.setRemoteDescription(remoteSdp);
     let answer = await this.pc.createAnswer();
     await this.pc.setLocalDescription(answer);
 
-    if (this.onunsubscribed) this.onunsubscribed(receiver);
+    if (this.onunsubscribed) this.onunsubscribed(subscriber);
   }
 
   init() {
@@ -138,8 +138,8 @@ export default class Receiver extends Transport {
       hash: this.remoteDTLSParameters.value
     }
 
-    for (let receiver of this.subscribers) {
-      sdpObj.medias.push(receiver.media)
+    for (let subscriber of this.subscribers) {
+      sdpObj.medias.push(subscriber.media)
     }
 
     let sdp = sdpObj.toString();

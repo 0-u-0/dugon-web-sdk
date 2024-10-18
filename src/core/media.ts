@@ -311,7 +311,7 @@ export default class Media {
 
 
   static create(mid: string, codec: Codec, iceParameters: StrDic,
-    iceCandidates: RemoteICECandidate[], receiverId: string) {
+    iceCandidates: RemoteICECandidate[], subscriberId: string) {
     let media = new Media(codec.kind, 'inactive', codec.codecName, codec.payload, codec.clockRate, mid, codec.cname,
       codec.channels, codec.parameters, codec.ssrc, codec.rtcpFeedback, codec.extensions, codec.rtx);
     media.role = 'send';
@@ -325,7 +325,7 @@ export default class Media {
     media.candidates = iceCandidates;
     //https://tools.ietf.org/html/draft-ietf-mmusic-msid-17#page-5
     // this will become trackId 
-    media.msidAppdata = receiverId;
+    media.msidAppdata = subscriberId;
 
     return media;
   }
