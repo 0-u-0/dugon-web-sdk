@@ -5,14 +5,28 @@ import type {
   RoomConfig
 } from './room'
 
+import type {
+  CreateLocalStreamConfig,
+  PlaySource
+} from './stream'
+
 import Room from './room';
+import Stream from './stream'
 /**
  * The Entry of SDK
  */
 export default class Dugon {
 
-  public static room(url: string, config?: RoomConfig) {
+  public static Room(url: string, config?: RoomConfig) {
     return new Room(url, config);
+  }
+
+  public static async Stream(config: CreateLocalStreamConfig){
+    return await Stream.createLocalStream(config);
+  }
+
+  public static async Play(streams :Stream[], source: PlaySource ){
+    streams.forEach(stream=>stream.play(source));
   }
 
   /**

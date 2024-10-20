@@ -8,7 +8,7 @@ import Receiver from './receiver';
 import Subscriber from './subscriber';
 import RemotePublisher from './remotePublisher';
 import DugonMediaSource from './mediasource';
-import User from './user';
+import Stream from '../stream';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
 const DEFAULT_AUDIO_CODEC = 'opus'
@@ -41,16 +41,18 @@ export default class Session {
   sender?: Sender;
   receiver?: Receiver;
 
-  users: Map<string, User>;
   //event
+  onjoined: (() => void) | null = null;
   onclose: (() => void) | null = null;
-  onpub: ((publisherId: string, userId: string, metadata: StrDic) => void) | null = null;
-  onuser: ((userId: string, state: string, metadata: StrDic) => void) | null = null;
-  onout?: ((userId: string) => void);
+  onpub: ((userId: string, publisherId: string, trackId: string, metadata: StrDic) => void) | null = null;
+
+  onin: ((userId: string, metadata: StrDic) => void) | null = null;
+  onout: ((userId: string) => void) | null = null;
+
   onmedia?: ((source: DugonMediaSource, subscriber: Subscriber) => void);
   onunsubscribed?: ((subscriber: Subscriber) => void);
-  // onreceiver?: ((receiver: Receiver) => void)
   onchange?: ((subscriber: Subscriber, isPaused: boolean) => void)
+
   constructor(public readonly url: string, public sessionId: string, public userId: string, public tokenId: string, metadata: any) {
 
     stringChecker(this.url, 'url');
@@ -59,8 +61,6 @@ export default class Session {
     stringChecker(this.tokenId, 'tokenId');
     metadataChecker(metadata);
     this.metadata = metadata;
-    this.users = new Map();
-
   }
 
   public async connect({ pub = false, sub = false, mediaId = '' } = { pub: true, sub: true, mediaId: '' }) {
@@ -73,6 +73,11 @@ export default class Session {
         'userId': this.userId,
         'metadata': this.metadata,
       });
+
+      this.socket.onopen = async () => {
+        await this.join(pub,sub,mediaId);
+        if(this.onjoined) this.onjoined();
+      };
 
       this.socket.onclose = () => {
         this.state = SessionState.Disconnected;
@@ -87,39 +92,42 @@ export default class Session {
 
       }
 
-      await this.socket.init();
+      this.socket.init();
 
-      const parameters = await this.socket.request({
-        event: 'join',
-        data: {
-          pub,
-          sub,
-          mediaId,
-        }
-      });
-
-      const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
-        codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
-      };
-      if (pub) {
-        this.initTransport('pub', pubParameters);
-      }
-      if (sub) {
-        this.initTransport('sub', subParameters);
-      }
-      this.supportedCodecs = codecs;
-
-      //after pub & sub init
-      this.state = SessionState.Connected;
 
     } else {
       //TODO: warning
     }
   }
 
+  async join(pub: boolean, sub: boolean, mediaId: string) {
+    const parameters = await this.socket!.request({
+      event: 'join',
+      data: {
+        pub,
+        sub,
+        mediaId,
+      }
+    });
+
+    const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
+      codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
+    };
+    if (pub) {
+      this.initTransport('pub', pubParameters);
+    }
+    if (sub) {
+      this.initTransport('sub', subParameters);
+    }
+    this.supportedCodecs = codecs;
+
+    //after pub & sub init
+    this.state = SessionState.Connected;
+  }
+
   //TODO: simulcast config 
   //codec , opus, VP8,VP9, H264-BASELINE, H264-CONSTRAINED-BASELINE, H264-MAIN, H264-HIGH
-  publish(source: DugonMediaSource, { simulcast = false, metadata = {}, maxBitrate, codec }: PublishOptions = {
+  publish(source: Stream, { simulcast = false, metadata = {}, maxBitrate, codec }: PublishOptions = {
     simulcast: false, metadata: {},
   }) {
     //TODO: add track checker
@@ -286,7 +294,7 @@ export default class Session {
         publisher.id = publisherId;
         if (this.onpub) {
           // this.onsender(sender);
-          this.onpub(publisher.id, this.userId, publisher.metadata);
+          this.onpub(this.userId, publisher.id, publisher.track.id, publisher.metadata);
         }
       }
 
@@ -337,36 +345,24 @@ export default class Session {
     switch (event) {
       case 'join': {
         let { userId, metadata } = data as { userId: string, metadata: StrDic };
-        if (!this.users.has(userId)) {
-          const user = new User(userId, metadata);
-          this.users.set(userId, user);
 
-          if (this.onuser) {
-            this.onuser(userId, 'in', metadata);
-          }
-        } else {
-          // TODO(cc): 10/17/24 error
+        if (this.onin) {
+          this.onin(userId, metadata);
         }
+
 
         break;
       };
       case 'leave': {
         let { userId } = data as { userId: string };
 
-        const user = this.users.get(userId);
-
-        if(user !== undefined){
-          const metadata = user.metadata;
-          this.users.delete(userId);
-          //TODO: release all receiver
-          if (this.receiver) {
-            this.receiver.unsubscribeByUserId(userId);
-          }
-          if (this.onuser) this.onuser(userId, 'out',metadata);
-        }else{
-          // TODO(cc): 10/17/24 error
+        //TODO: release all receiver
+        if (this.receiver) {
+          this.receiver.unsubscribeByUserId(userId);
         }
-        
+        if (this.onout) this.onout(userId);
+
+
         break;
       };
       case 'publish': {
@@ -375,7 +371,8 @@ export default class Session {
         if (this.receiver) {
           this.receiver.remotePublishers.set(remotePublisher.publisherId, remotePublisher);
           if (this.onpub) {
-            this.onpub(remotePublisher.publisherId, remotePublisher.userId, remotePublisher.metadata);
+            //reuse publishId as trackId
+            this.onpub(remotePublisher.userId, remotePublisher.publisherId, remotePublisher.publisherId, remotePublisher.metadata);
           }
         }
 

@@ -16,6 +16,7 @@ export default class Receiver extends Transport {
   pc: RTCPeerConnection;
 
   subscribers: Subscriber[] = [];
+  
   asyncQueue = new AsyncQueue();
   isGotDtls = false;
   currentMid = 0;
