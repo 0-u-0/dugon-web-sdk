@@ -42,13 +42,12 @@ async function initSession(username, room) {
     const myUserId = randomId(10);
     session = Dugon.createSession(signalServer, room, myUserId, "", { username });
 
-    session.onuser = (userId, state, metadata) => {
-        console.log('user', userId, state);
-        if (state === 'in') {
-            createRemoteVideo(userId);
-        } else if (state === 'out') {
-            removeRemoteVideo(userId);
-        }
+    session.onin = (userId, metadata) => {
+        createRemoteVideo(userId);
+    };
+
+    session.onout = (userId) => {
+        removeRemoteVideo(userId);
     };
 
     session.onclose = _ => {
