@@ -7,7 +7,6 @@ import { Codec } from './codec';
 import Receiver from './receiver';
 import Subscriber from './subscriber';
 import RemotePublisher from './remotePublisher';
-import DugonMediaSource from './mediasource';
 import Stream from '../stream';
 
 const DEFAULT_VIDEO_CODEC = 'VP8'
@@ -49,7 +48,7 @@ export default class Session {
   onin: ((userId: string, metadata: StrDic) => void) | null = null;
   onout: ((userId: string) => void) | null = null;
 
-  onmedia?: ((source: DugonMediaSource, subscriber: Subscriber) => void);
+  onmedia?: ((source: MediaStreamTrack, subscriber: Subscriber) => void);
   onunsubscribed?: ((subscriber: Subscriber) => void);
   onchange?: ((subscriber: Subscriber, isPaused: boolean) => void)
 
@@ -155,7 +154,7 @@ export default class Session {
 
       let codecCap = this.supportedCodecs![codec];
       if (codecCap) {
-        if (this.sender) this.sender.publish(source.track, codecCap, metadata, maxBitrate);
+        if (this.sender) this.sender.publish(source.track!, codecCap, metadata, maxBitrate);
       } else {
         //TODO: 
       }
@@ -313,8 +312,7 @@ export default class Session {
       };
 
       this.receiver.ontrack = (track, subscriber) => {
-        // this.resume(receiver.id);
-        if (this.onmedia) this.onmedia(new DugonMediaSource(track), subscriber);
+        if (this.onmedia) this.onmedia(track, subscriber);
       };
 
       this.receiver.onunsubscribed = receiver => {

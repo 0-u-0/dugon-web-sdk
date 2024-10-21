@@ -1,4 +1,4 @@
-import { randomInitId } from './utils';
+import { randomIntId } from './utils';
 
 class Packet {
   resolve: Function
@@ -59,7 +59,7 @@ export default class Socket {
   }
 
   async request(params: object) {
-    const id = randomInitId(8);
+    const id = randomIntId(8);
 
     this.sendJSON({
       'method': 'request',

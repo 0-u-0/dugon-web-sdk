@@ -1,5 +1,5 @@
-import DugonMediaSource from "./core/mediasource";
 import Publisher from "./core/publisher";
+import { generateUUID } from "./core/utils";
 
 
 export type PlaySource =  HTMLMediaElement| string ;
@@ -10,36 +10,56 @@ export interface CreateLocalStreamConfig {
   share?: boolean
 }
 
-enum StreamType {
+export enum StreamType {
   Local = "local",
-  Remote = "audio",
+  Remote = "remote",
 }
 
 // LocalStream,
 
 export default class Stream {
 
-  source?: DugonMediaSource
-  userId?: string
-  //
   type: StreamType 
 
+  id: string = generateUUID()
+  userId?: string
   pid?: string
+  sid?: string
 
-  constructor(public track: MediaStreamTrack, type?: StreamType) {
+  track?: MediaStreamTrack
+
+  onsub: (() => void) | null = null;
+  onclose: (() => void) | null = null;
+  onpause: (() => void) | null = null;
+  onresume: (() => void) | null = null;
+
+  constructor(type?: StreamType) {
     this.type = type? type: StreamType.Local
   }
 
   get kind() {
-    return this.track.kind;
+    if(this.track){
+      return this.track.kind;
+    }else{
+      return 'unknown'
+    }
   }
 
-  get id() {
-    if(this.type === StreamType.Local && this.pid === undefined){
-      return this.track.id
+  get trackId(){
+    if(this.track){
+      return this.track.id;
+    }else{
+      return "";
     }
-    return this.pid!
   }
+
+  // TODO(cc): 10/21/24 use uuid
+  // get id() {
+  //   if(this.type === StreamType.Local && this.pid === undefined){
+  //     return this.track.id
+  //   }
+  //   return this.pid!
+  // }
 
   static async createLocalStream(config: CreateLocalStreamConfig) {
     const video = config.video ? config.video : false;
@@ -71,7 +91,8 @@ export default class Stream {
     if (tracks && tracks.length > 0) {
       const streams = []
       for(const track of tracks){
-        const stream = new Stream(track)
+        const stream = new Stream()
+        stream.track = track;
         streams.push(stream);
       }
       return streams;
@@ -83,16 +104,22 @@ export default class Stream {
 
   }
 
-  initStream(userId: string, source: DugonMediaSource) {
 
-  }
 
-  play(element: PlaySource | null ) {
+  // TODO(cc): 10/21/24 mute local audio
+  play(player: PlaySource | null ) {
+    // TODO(cc): 10/21/24  check element
+
+    if(this.track === undefined){
+      // TODO(cc): 10/21/24 throw error
+      return
+    }
+
     let mediaElement: HTMLMediaElement| null;
-    if(typeof element === 'string'){
-      mediaElement = document.querySelector(element);
+    if(typeof player === 'string'){
+      mediaElement = document.querySelector(player);
     }else{
-      mediaElement = element;
+      mediaElement = player;
     }
 
     // TODO(cc): 10/15/24 check element

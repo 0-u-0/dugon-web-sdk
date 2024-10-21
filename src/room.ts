@@ -1,9 +1,9 @@
-import DugonMediaSource from "./core/mediasource";
 import { StrDic } from "./core/remoteParameters";
 import Session from "./core/session";
 import { randomId } from "./core/utils";
-import Stream from "./stream";
+import Stream, { StreamType } from "./stream";
 import User, { UserType } from "./user";
+
 
 
 interface RoomConfig {
@@ -35,6 +35,7 @@ class Room {
   onuser: ((user: User) => void) | null = null;
   onclose: (() => void) | null = null;
 
+  // TODO(cc): 10/21/24 auto subscribe
   constructor(url: string, config?: RoomConfig) {
     this.url = url;
 
@@ -59,7 +60,7 @@ class Room {
 
   public async connect() {
     this.session.onjoined = () => {
-      if(this.onuser) this.onuser(this.user);
+      if (this.onuser) this.onuser(this.user);
     };
 
     this.session.onin = (userId, metadata) => {
@@ -76,12 +77,23 @@ class Room {
       }
     };
 
+    this.session.onmedia = (track, subscriber) => {
+      const stream = this.streams.get(subscriber.publisherId);
+      if(stream){
+        stream.track = track;
+        if(stream.onsub) stream.onsub();
+      }
+    };
+
     // this.session.onpub = (pub)
     this.session.onpub = (remoteUserId, pubId, trackId, metadata) => {
-      if (remoteUserId == this.user.id) {
+      if (remoteUserId === this.user.id) {
         const stream = this.localStreams.get(trackId);
         if (stream) {
+          //
+          stream.userId = this.user.id;
           stream.pid = pubId;
+          //
           this.localStreams.delete(trackId);
           this.streams.set(pubId, stream);
 
@@ -90,6 +102,18 @@ class Room {
 
         // console.log('local', pubId, metadata);
       } else {
+        const user = this.users.get(remoteUserId);
+        if (user) {
+          const stream = new Stream(StreamType.Remote);
+
+          stream.userId = remoteUserId;
+          stream.pid = pubId;
+
+          this.streams.set(pubId, stream);
+
+          if (user.onstream) user.onstream(stream);
+        }
+
         // session.subscribe(pubId);
       }
     };
@@ -105,14 +129,17 @@ class Room {
 
   publish(localStreams: Stream[]) {
     localStreams.forEach(stream => {
-      if (!this.localStreams.has(stream.id)) {
-        this.localStreams.set(stream.id, stream);
+      // TODO(cc): 10/21/24 use stream id
+      if (!this.localStreams.has(stream.trackId)) {
+        this.localStreams.set(stream.trackId, stream);
         this.session.publish(stream);
       }
     })
-    // for(const stream: localStreams){
+  }
 
-    // }
+  subscribe(stream: Stream) {
+    // TODO(cc): 10/21/24 check stream
+    this.session.subscribe(stream.pid!)
   }
 
 
