@@ -3,12 +3,12 @@ import { randomIntId } from './utils';
 // TODO(cc): 10/22/24 add timeout
 class Packet {
   ack: Function
-  faild: Function
+  fail: Function
   constructor(y: Function, n: Function) {
     this.ack = (data: object) => {
       y(data);
     };
-    this.faild = (error: Error) => {
+    this.fail = (error: Error) => {
       n(error);
     };
   }
