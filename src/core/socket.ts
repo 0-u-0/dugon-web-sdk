@@ -1,20 +1,21 @@
 import { randomIntId } from './utils';
 
+// TODO(cc): 10/22/24 add timeout
 class Packet {
-  resolve: Function
-  reject: Function
+  ack: Function
+  faild: Function
   constructor(y: Function, n: Function) {
-    this.resolve = (data: object) => {
+    this.ack = (data: object) => {
       y(data);
     };
-    this.reject = (error: Error) => {
+    this.faild = (error: Error) => {
       n(error);
     };
   }
 }
 
 export default class Socket {
-  messages: Map<number, Packet> = new Map();
+  packets: Map<number, Packet> = new Map();
   ws: WebSocket | null = null;
 
   //event
@@ -39,9 +40,9 @@ export default class Socket {
       let data = JSON.parse(event.data);
       let { id, method, params } = data;
       if (method === 'response') {
-        let packet = this.messages.get(id);
+        let packet = this.packets.get(id);
         if (packet) {
-          packet.resolve(params);
+          packet.ack(params);
         }
       } else if (method === 'notification') {
         let { event, data } = params;
@@ -70,7 +71,7 @@ export default class Socket {
     const executor = (y: Function, n: Function) => {
       const packet = new Packet(y, n);
 
-      this.messages.set(id, packet);
+      this.packets.set(id, packet);
     }
 
     return new Promise(executor);
