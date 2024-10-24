@@ -20,7 +20,6 @@ export default class Socket {
 
   //event
   onnotification?: ((event: string, data: object) => void);
-  onopen?: (() => void)
   onclose?: (() => void)
   constructor(public url: string, public params: object) {
   }
@@ -54,9 +53,16 @@ export default class Socket {
       if (this.onclose) this.onclose();
     }
 
-    this.ws.onopen = event => {
-      if (this.onopen) this.onopen();
-    };
+    //TODO: error
+    const executor = (y: Function, n: Function) => {
+      //TODO: ???
+      if (this.ws) {
+        this.ws.onopen = event => {
+          y();
+        };
+      }
+    }
+    return new Promise(executor);
   }
 
   async request(params: object) {

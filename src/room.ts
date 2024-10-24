@@ -59,9 +59,6 @@ class Room {
   }
 
   public async connect() {
-    this.session.onjoined = () => {
-      if (this.onuser) this.onuser(this.user);
-    };
 
     this.session.onin = (userId, metadata) => {
       // TODO(cc): 10/18/24 check if existed
@@ -74,6 +71,7 @@ class Room {
       const user = this.users.get(userId);
       if (user && user.onleave) {
         user.onleave();
+        this.users.delete(userId);
       }
     };
 
@@ -124,7 +122,7 @@ class Room {
     };
 
     // TODO(cc): 10/20/24 config
-    return this.session.connect({ pub: true, sub: true });
+    await this.session.connect({ pub: true, sub: true });
   }
 
   publish(localStreams: Stream[] | Stream) {

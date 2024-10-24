@@ -5,24 +5,24 @@ const pub = urlObject.searchParams.get("pub") === 'true';
 const $ = document.querySelector.bind(document);
 
 function createRemoteVideo(id) {
-    const videoBox = document.createElement('div');
-    videoBox.id = `videoBox-${id}`;
+  const videoBox = document.createElement('div');
+  videoBox.id = `videoBox-${id}`;
 
-    const newVideo = document.createElement('video');
-    newVideo.id = `video-${id}`;
-    newVideo.controls = true;
-    newVideo.autoplay = true;
-    newVideo.muted = true;
-    newVideo.style.width = "400px";
-    newVideo.style.height = "400px";
+  const newVideo = document.createElement('video');
+  newVideo.id = `video-${id}`;
+  newVideo.controls = true;
+  newVideo.autoplay = true;
+  newVideo.muted = true;
+  newVideo.style.width = "400px";
+  newVideo.style.height = "400px";
 
-    videoBox.append(newVideo);
+  videoBox.append(newVideo);
 
-    $('#videoList').append(videoBox);
+  $('#videoList').append(videoBox);
 }
 
 function removeRemoteVideo(id) {
-    $(`#videoBox-${id}`).remove();
+  $(`#videoBox-${id}`).remove();
 }
 
 async function main() {
@@ -32,33 +32,32 @@ async function main() {
   let streams;
   const room = Dugon.Room(signalServer);
   console.log(room)
-  room.onuser = async user=>{
-    if(user.type === 'local'){
-      console.log('join!')
-      if(pub){
-        streams = await Dugon.Stream({video:true, audio:true});
-        Dugon.Play(streams, '#localVideo');
-        room.publish(streams);
-      }
-    } else {
-      createRemoteVideo(user.id);
+  room.onuser = async user => {
 
-      user.onstream = (stream)=>{
-        console.log('remote stream');
-        room.subscribe(stream);
-        // stream.on
-        stream.onsub = ()=>{
-          stream.play(`#video-${user.id}`)
-        };
-      };      
-    }
+    createRemoteVideo(user.id);
+
+    user.onstream = (stream) => {
+      console.log('remote stream');
+      room.subscribe(stream);
+      // stream.on
+      stream.onsub = () => {
+        stream.play(`#video-${user.id}`)
+      };
+    };
   };
 
-  room.onleave = async user=>{
-    
+  room.onleave = async user => {
+
   };
 
-  room.connect();
+  await room.connect();
+
+  console.log('join!')
+  if (pub) {
+    streams = await Dugon.Stream({ video: true, audio: true });
+    Dugon.Play(streams, '#localVideo');
+    room.publish(streams);
+  }
 }
 
 main();

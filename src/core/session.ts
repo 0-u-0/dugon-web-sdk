@@ -41,7 +41,6 @@ export default class Session {
   receiver?: Receiver;
 
   //event
-  onjoined: (() => void) | null = null;
   onclose: (() => void) | null = null;
   onpub: ((userId: string, publisherId: string, trackId: string, metadata: StrDic) => void) | null = null;
 
@@ -73,11 +72,6 @@ export default class Session {
         'metadata': this.metadata,
       });
 
-      this.socket.onopen = async () => {
-        await this.join(pub,sub,mediaId);
-        if(this.onjoined) this.onjoined();
-      };
-
       this.socket.onclose = () => {
         this.state = SessionState.Disconnected;
 
@@ -91,8 +85,8 @@ export default class Session {
 
       }
 
-      this.socket.init();
-
+      await this.socket.init();
+      await this.join(pub, sub, mediaId);
 
     } else {
       //TODO: warning
