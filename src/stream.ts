@@ -95,6 +95,9 @@ export default class Stream {
         stream.track = track;
         streams.push(stream);
       }
+      if(streams.length === 1){
+        return streams[0];
+      }
       return streams;
     }
     return null;

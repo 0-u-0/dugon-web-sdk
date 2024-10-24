@@ -1,6 +1,6 @@
 import { StrDic } from "./core/remoteParameters";
 import Session from "./core/session";
-import { randomId } from "./core/utils";
+import { generateUUID } from "./core/utils";
 import Stream, { StreamType } from "./stream";
 import User, { UserType } from "./user";
 
@@ -11,7 +11,7 @@ interface RoomConfig {
 
   roomId?: string;
   userId?: string;
-  userName?: string;
+  username?: string;
   userData?: any
 }
 
@@ -41,11 +41,11 @@ class Room {
 
     this.id = config?.roomId ?? "89757";
 
-    const userName = config?.userName ?? "Anonym";
-    const userId = config?.userId ?? randomId(7);
+    const username = config?.username ?? "Anonym";
+    const userId = config?.userId ?? generateUUID();
     const userData = config?.userData ?? {};
 
-    userData["name"] = userName;
+    userData["name"] = username;
 
     this.user = new User(userId, UserType.Local, userData);
 
@@ -127,14 +127,22 @@ class Room {
     return this.session.connect({ pub: true, sub: true });
   }
 
-  publish(localStreams: Stream[]) {
-    localStreams.forEach(stream => {
+  publish(localStreams: Stream[] | Stream) {
+    let streams: Stream[]
+    if(Array.isArray(localStreams)){
+      streams = localStreams;
+    }else{
+      streams = [localStreams]
+    }
+
+    streams.forEach(stream => {
       // TODO(cc): 10/21/24 use stream id
       if (!this.localStreams.has(stream.trackId)) {
         this.localStreams.set(stream.trackId, stream);
         this.session.publish(stream);
       }
     })
+    
   }
 
   subscribe(stream: Stream) {
