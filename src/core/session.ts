@@ -15,7 +15,7 @@ const DEFAULT_AUDIO_MAX_BITRATE = 60000;
 const DEFAULT_VIDEO_MAX_BITRATE = 150000;
 
 
-declare type PublishOptions = {
+export interface PublishOptions {
   simulcast?: boolean,
   codec?: string,
   metadata?: Metadata,
@@ -32,7 +32,7 @@ enum SessionState {
 }
 
 // TODO(cc): 10/14/24 rename session to room
-export default class Session {
+export class Session {
   state: SessionState = SessionState.New;
   metadata: Metadata
   socket: Socket | null = null;

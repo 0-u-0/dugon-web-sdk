@@ -1,5 +1,5 @@
 import { StrDic } from "./core/remoteParameters";
-import Session from "./core/session";
+import { Session, PublishOptions } from "./core/session";
 import { generateUUID } from "./core/utils";
 import Stream, { StreamType } from "./stream";
 import User, { UserType } from "./user";
@@ -77,9 +77,9 @@ class Room {
 
     this.session.onmedia = (track, subscriber) => {
       const stream = this.streams.get(subscriber.publisherId);
-      if(stream){
+      if (stream) {
         stream.track = track;
-        if(stream.onsub) stream.onsub();
+        if (stream.onsub) stream.onsub();
       }
     };
 
@@ -91,6 +91,7 @@ class Room {
           //
           stream.userId = this.user.id;
           stream.pid = pubId;
+          stream.session = this.session;
           //
           this.localStreams.delete(trackId);
           this.streams.set(pubId, stream);
@@ -106,6 +107,7 @@ class Room {
 
           stream.userId = remoteUserId;
           stream.pid = pubId;
+          stream.session = this.session;
 
           this.streams.set(pubId, stream);
 
@@ -125,11 +127,11 @@ class Room {
     await this.session.connect({ pub: true, sub: true });
   }
 
-  publish(localStreams: Stream[] | Stream) {
+  publish(localStreams: Stream[] | Stream, options: PublishOptions) {
     let streams: Stream[]
-    if(Array.isArray(localStreams)){
+    if (Array.isArray(localStreams)) {
       streams = localStreams;
-    }else{
+    } else {
       streams = [localStreams]
     }
 
@@ -137,10 +139,10 @@ class Room {
       // TODO(cc): 10/21/24 use stream id
       if (!this.localStreams.has(stream.trackId)) {
         this.localStreams.set(stream.trackId, stream);
-        this.session.publish(stream);
+        this.session.publish(stream, options);
       }
     })
-    
+
   }
 
   subscribe(stream: Stream) {

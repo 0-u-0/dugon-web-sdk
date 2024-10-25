@@ -1,8 +1,9 @@
 import Publisher from "./core/publisher";
+import { Session } from "./core/session";
 import { generateUUID } from "./core/utils";
 
 
-export type PlaySource =  HTMLMediaElement| string ;
+export type PlaySource = HTMLMediaElement | string;
 
 export interface CreateLocalStreamConfig {
   video?: boolean
@@ -19,13 +20,14 @@ export enum StreamType {
 
 export default class Stream {
 
-  type: StreamType 
+  type: StreamType
 
   id: string = generateUUID()
   userId?: string
   pid?: string
   sid?: string
 
+  session?: Session
   track?: MediaStreamTrack
 
   onsub: (() => void) | null = null;
@@ -34,21 +36,21 @@ export default class Stream {
   onresume: (() => void) | null = null;
 
   constructor(type?: StreamType) {
-    this.type = type? type: StreamType.Local
+    this.type = type ? type : StreamType.Local
   }
 
   get kind() {
-    if(this.track){
+    if (this.track) {
       return this.track.kind;
-    }else{
+    } else {
       return 'unknown'
     }
   }
 
-  get trackId(){
-    if(this.track){
+  get trackId() {
+    if (this.track) {
       return this.track.id;
-    }else{
+    } else {
       return "";
     }
   }
@@ -90,12 +92,12 @@ export default class Stream {
     }
     if (tracks && tracks.length > 0) {
       const streams = []
-      for(const track of tracks){
+      for (const track of tracks) {
         const stream = new Stream()
         stream.track = track;
         streams.push(stream);
       }
-      if(streams.length === 1){
+      if (streams.length === 1) {
         return streams[0];
       }
       return streams;
@@ -110,28 +112,28 @@ export default class Stream {
 
 
   // TODO(cc): 10/21/24 mute local audio
-  play(player: PlaySource | null ) {
+  play(player: PlaySource | null) {
     // TODO(cc): 10/21/24  check element
 
-    if(this.track === undefined){
+    if (this.track === undefined) {
       // TODO(cc): 10/21/24 throw error
       return
     }
 
-    let mediaElement: HTMLMediaElement| null;
-    if(typeof player === 'string'){
+    let mediaElement: HTMLMediaElement | null;
+    if (typeof player === 'string') {
       mediaElement = document.querySelector(player);
-    }else{
+    } else {
       mediaElement = player;
     }
 
     // TODO(cc): 10/15/24 check element
     let stream: MediaStream;
     if (mediaElement !== null) {
-      if(mediaElement.srcObject instanceof MediaStream ){
+      if (mediaElement.srcObject instanceof MediaStream) {
         stream = mediaElement.srcObject;
         stream.addTrack(this.track);
-      }else{
+      } else {
         stream = new MediaStream();
         stream.addTrack(this.track);
         mediaElement.srcObject = stream;
@@ -139,7 +141,18 @@ export default class Stream {
     }
   }
 
+  // TODO(cc): 10/24/24 add state, 
+  pause() {
+    if (this.session) {
+      this.session?.pause(this.pid!);
+    }
+  }
 
+  resume() {
+    if (this.session) {
+      this.session?.resume(this.pid!);
+    }
+  }
 
 
 };
