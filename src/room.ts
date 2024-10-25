@@ -119,6 +119,24 @@ class Room {
     };
 
 
+    this.session.onunsubscribed = (subscriber)=>{
+      const stream = this.streams.get(subscriber.publisherId);
+      if(stream && stream.onclose){
+        stream.onclose();
+      }
+    };
+
+    this.session.onchange = (subscriber, isPause)=>{
+      const stream = this.streams.get(subscriber.publisherId);
+      if(stream){
+        if(isPause && stream.onpause){
+          stream.onpause();
+        }else if(!isPause && stream.onresume){
+          stream.onresume();
+        }
+      }
+    };
+
     this.session.onclose = () => {
       if (this.onclose) this.onclose();
     };
