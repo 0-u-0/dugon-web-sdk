@@ -17,8 +17,10 @@ function createRemoteVideo(id) {
   newVideo.style.height = "400px";
 
   videoBox.append(newVideo);
+  videoBox.append(document.createElement('br'));
 
   $('#videoList').append(videoBox);
+
 }
 
 function removeRemoteVideo(id) {
@@ -59,7 +61,9 @@ async function main() {
       room.subscribe(stream);
       // stream.on
       stream.onsub = () => {
-        stream.play(`#video-${user.id}`)
+        stream.play(`#video-${user.id}`);
+
+        addButtonForStream(stream.kind,$(`#videoBox-${user.id}`), stream);
       };
 
     };
