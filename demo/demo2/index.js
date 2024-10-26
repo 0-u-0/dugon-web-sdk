@@ -25,6 +25,24 @@ function removeRemoteVideo(id) {
   $(`#videoBox-${id}`).remove();
 }
 
+function addButtonForStream(label,fatherElement, stream) {
+  // fatherElement
+  const pauseButton = document.createElement('button');
+  pauseButton.onclick = () => {
+    stream.pause();
+  };
+  pauseButton.textContent = label + " pause";
+
+  const resumeButton = document.createElement('button');
+  resumeButton.onclick = () => {
+    stream.resume();
+  };
+  resumeButton.textContent = label + " resume";
+
+  fatherElement.append(pauseButton);
+  fatherElement.append(resumeButton);
+}
+
 async function main() {
 
   const signalServer = `ws://192.168.97.138:8800`;
@@ -43,12 +61,15 @@ async function main() {
       stream.onsub = () => {
         stream.play(`#video-${user.id}`)
       };
+
+    };
+
+    user.onleave = ()=>{
+      removeRemoteVideo(user.id);
     };
   };
 
-  room.onleave = async user => {
 
-  };
 
   await room.connect();
 
@@ -57,7 +78,11 @@ async function main() {
     streams = await Dugon.Stream({ video: true, audio: true });
     Dugon.Play(streams, '#localVideo');
     room.publish(streams);
+
+    addButtonForStream('audio',$('#localVideoBox'), streams[0]);
+    addButtonForStream('video',$('#localVideoBox'), streams[1]);
   }
+
 }
 
 main();
