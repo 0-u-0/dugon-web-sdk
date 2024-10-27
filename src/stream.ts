@@ -154,5 +154,14 @@ export default class Stream {
     }
   }
 
+  close() {
+    if (this.session) {
+      if(this.type === StreamType.Local){
+        this.session?.unpublish(this.pid!);
+      }else{
+        this.session.unsubscribe(this.pid!);
+      }
+    }
+  }
 
 };

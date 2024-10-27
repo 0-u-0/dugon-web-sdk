@@ -27,7 +27,7 @@ function removeRemoteVideo(id) {
   $(`#videoBox-${id}`).remove();
 }
 
-function addButtonForStream(label,fatherElement, stream) {
+function addButtonForStream(label, fatherElement, stream) {
   // fatherElement
   const pauseButton = document.createElement('button');
   pauseButton.onclick = () => {
@@ -40,10 +40,21 @@ function addButtonForStream(label,fatherElement, stream) {
     stream.resume();
   };
   resumeButton.textContent = label + " resume";
+  //
 
+  const closeButton = document.createElement('button');
+  closeButton.onclick = () => {
+    stream.close();
+  };
+  closeButton.textContent = label + " close";
+
+
+  fatherElement.append(closeButton);
   fatherElement.append(pauseButton);
   fatherElement.append(resumeButton);
 }
+
+
 
 async function main() {
 
@@ -63,12 +74,23 @@ async function main() {
       stream.onsub = () => {
         stream.play(`#video-${user.id}`);
 
-        addButtonForStream(stream.kind,$(`#videoBox-${user.id}`), stream);
+        addButtonForStream(stream.kind, $(`#videoBox-${user.id}`), stream);
       };
 
+      stream.onclose = () => {
+        console.log('close');
+      };
+
+      stream.onpause = () => {
+        console.log('pause');
+      };
+
+      stream.onresume = () => {
+        console.log('resume');
+      };
     };
 
-    user.onleave = ()=>{
+    user.onleave = () => {
       removeRemoteVideo(user.id);
     };
   };
@@ -83,8 +105,8 @@ async function main() {
     Dugon.Play(streams, '#localVideo');
     room.publish(streams);
 
-    addButtonForStream('audio',$('#localVideoBox'), streams[0]);
-    addButtonForStream('video',$('#localVideoBox'), streams[1]);
+    addButtonForStream('audio', $('#localVideoBox'), streams[0]);
+    addButtonForStream('video', $('#localVideoBox'), streams[1]);
   }
 
 }
