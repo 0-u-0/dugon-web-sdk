@@ -4,10 +4,10 @@ import { StrDic } from './remoteParameters';
 
 export default class Subscriber {
   transceiver?: RTCRtpTransceiver;
-  senderPaused:boolean;
+  pubPaused:boolean;
   constructor(public mid: string, public publisherId: string, public userId: string,
     public id: string, public codec: Codec, public metadata: StrDic, public media: Media) {
-      this.senderPaused = this.codec.senderPaused;
+      this.pubPaused = this.codec.pubPaused;
   }
 
   get available(){

@@ -20,12 +20,12 @@ export enum StreamType {
 
 export default class Stream {
 
-  type: StreamType
-
   id: string = generateUUID()
   userId?: string
   pid?: string
   sid?: string
+
+  pubPaused: boolean = false
 
   session?: Session
   track?: MediaStreamTrack
@@ -35,8 +35,7 @@ export default class Stream {
   onpause: (() => void) | null = null;
   onresume: (() => void) | null = null;
 
-  constructor(type?: StreamType) {
-    this.type = type ? type : StreamType.Local
+  constructor(public type: StreamType) {
   }
 
   get kind() {
@@ -93,7 +92,7 @@ export default class Stream {
     if (tracks && tracks.length > 0) {
       const streams = []
       for (const track of tracks) {
-        const stream = new Stream()
+        const stream = new Stream(StreamType.Local)
         stream.track = track;
         streams.push(stream);
       }

@@ -79,6 +79,7 @@ class Room {
       const stream = this.streams.get(subscriber.publisherId);
       if (stream) {
         stream.track = track;
+        stream.pubPaused = stream.pubPaused;
         if (stream.onsub) stream.onsub();
       }
     };
@@ -129,6 +130,7 @@ class Room {
     this.session.onchange = (subscriber, isPause)=>{
       const stream = this.streams.get(subscriber.publisherId);
       if(stream){
+        stream.pubPaused = isPause;
         if(isPause && stream.onpause){
           stream.onpause();
         }else if(!isPause && stream.onresume){

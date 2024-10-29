@@ -325,10 +325,10 @@ export class Session {
 
   private remotePublisherChanged(publisherId: string, isPaused: boolean) {
     if (this.receiver) {
-      let receiver = this.receiver.getSubscriberByPublisherId(publisherId);
-      if (receiver) {
-        receiver.senderPaused = isPaused;
-        if (this.onchange) this.onchange(receiver, isPaused);
+      let subscriber = this.receiver.getSubscriberByPublisherId(publisherId);
+      if (subscriber) {
+        subscriber.pubPaused = isPaused;
+        if (this.onchange) this.onchange(subscriber, isPaused);
       }
     }
   }
