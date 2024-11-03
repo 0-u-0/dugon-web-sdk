@@ -94,14 +94,13 @@ export class Session {
   }
 
   async join(pub: boolean, sub: boolean, mediaId: string) {
-    const parameters = await this.socket!.request({
-      event: 'join',
-      data: {
+    const parameters = await this.request('join',
+      {
         pub,
         sub,
         mediaId,
       }
-    });
+    );
 
     const { codecs, pub: pubParameters, sub: subParameters } = parameters as {
       codecs: CodecDic, pub: TransportParameters, sub: TransportParameters
@@ -275,14 +274,13 @@ export class Session {
       };
 
       this.sender.onpublisher = async (publisher) => {
-        const data = await this.socket!.request({
-          event: 'publish',
-          data: {
+        const data = await this.request('publish',
+          {
             transportId: this.sender!.id,
             codec: publisher.media!.toCodec(),
             metadata: publisher.metadata
           }
-        })
+        )
         const { publisherId } = data as { publisherId: string };
         publisher.id = publisherId;
         if (this.onpub) {
@@ -295,14 +293,12 @@ export class Session {
       this.receiver = new Receiver(id, iceCandidates, iceParameters, dtlsParameters);
 
       this.receiver.ondtls = async dtlsParameters => {
-        await this.socket!.request({
-          event: 'dtls',
-          data: {
-            transportId: this.receiver!.id,
-            role: 'sub',
-            dtlsParameters
-          }
-        });
+        await this.request('dtls', {
+          transportId: this.receiver!.id,
+          role: 'sub',
+          dtlsParameters
+        }
+        );
       };
 
       this.receiver.ontrack = (track, subscriber) => {
@@ -311,13 +307,12 @@ export class Session {
 
       this.receiver.onunsubscribed = receiver => {
         if (this.onunsubscribed) this.onunsubscribed(receiver);
-        this.socket!.request({
-          event: 'unsubscribe',
-          data: {
+        this.request('unsubscribe',
+          {
             transportId: this.receiver!.id,
             publisherId: receiver.publisherId,
           }
-        })
+        )
       };
 
     }
@@ -394,11 +389,11 @@ export class Session {
     }
   }
 
-  private async request(event: string, data: object) {
+  private async request(method: string, data: object) {
     if (this.socket) {
-      return await this.socket.request({
-        event, data
-      })
+      return await this.socket.request(
+        method, data
+      )
     } else {
       //TODO: 
     }

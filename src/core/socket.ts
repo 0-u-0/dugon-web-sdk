@@ -65,14 +65,16 @@ export default class Socket {
     return new Promise(executor);
   }
 
-  async request(params: object) {
+  async request(method: string, data: any) {
     const id = randomIntId(8);
 
-    this.sendJSON({
-      'method': 'request',
+    const requestObject = {
+      request: true,
       id,
-      params,
-    });
+      method,
+      data
+    };
+    this.sendJSON(requestObject);
 
     const executor = (y: Function, n: Function) => {
       const packet = new Packet(y, n);
