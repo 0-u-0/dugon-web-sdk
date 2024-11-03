@@ -36,16 +36,17 @@ export default class Socket {
     this.ws = new WebSocket(this.getFullURL());
 
     this.ws.onmessage = event => {
-      let data = JSON.parse(event.data);
-      let { id, method, params } = data;
-      if (method === 'response') {
-        let packet = this.packets.get(id);
-        if (packet) {
-          packet.ack(params);
+      let message = JSON.parse(event.data);
+      let { response, ok, id, data, notification, method, } = message;
+      if (response) {
+        if (ok) {
+          let packet = this.packets.get(id);
+          if (packet) {
+            packet.ack(data);
+          }
         }
-      } else if (method === 'notification') {
-        let { event, data } = params;
-        if (this.onnotification) this.onnotification(event, data);
+      } else if (notification) {
+        if (this.onnotification) this.onnotification(method, data);
       }
     }
 
