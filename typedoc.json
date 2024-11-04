@@ -1,0 +1,11 @@
+{
+  "entryPoints": [
+    "./src/dugon.ts"
+  ],
+  "tsconfig": "./tsconfig.json",
+  "disableSources": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "out": "doc"
+}
+// typedoc --name 'Dugon Web SDK Doc'
