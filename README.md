@@ -3,6 +3,13 @@
 [![GitHub tag](https://img.shields.io/github/tag/0-u-0/dugon-web-sdk.svg)](https://github.com/0-u-0/dugon-web-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
+
+## Installation
+
+```
+$ npm install dugon
+```
+
 ## Build
 
 **dev**
@@ -16,6 +23,10 @@ $ npm run-script dev
 ```bash
 $ npm run-script release 
 ```
+
+## Demo Online
+
+Try it at [Demo](https://demo.dugon.one/)
 
 ## Documentation
 
