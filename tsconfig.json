@@ -3,7 +3,9 @@
     "target": "esnext",
     "module": "esnext",
     "strict": true,
-    "allowJs":true,
+    "allowJs": true,
+    "declaration": true,
+    "outDir": "dist",
     "strictNullChecks": true,
     "importHelpers": true,
     "moduleResolution": "node",
@@ -13,8 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "newLine": "LF",
-    "types": [
-    ],
+    "types": [],
     "lib": [
       "es6",
       "dom"

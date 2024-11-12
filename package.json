@@ -1,12 +1,18 @@
 {
-  "name": "dugon-web-sdk",
-  "version": "0.0.1",
+  "name": "dugon",
+  "version": "0.0.2",
   "description": "Dugon Web SDK",
-  "main": "index.js",
+  "main": "dist/dugon.js",
+  "module": "dist/dugon.mjs",
+  "types": "dist/dugon.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "NODE_ENV=development rollup -c",
-    "dev": "NODE_ENV=development rollup -c -w",
-    "release": "NODE_ENV=production rollup -c",
+    "build": "rollup -c --environment NODE_ENV:development",
+    "dev": "rollup -c -w --environment NODE_ENV:development",
+    "release": "rollup -c --environment NODE_ENV:production",
+    "min":"rollup -c --environment BROWSER,NODE_ENV:production",
     "doc": "typedoc"
   },
   "repository": {
@@ -23,6 +29,7 @@
     "@rollup/plugin-typescript": "^12.1.0",
     "@types/sdp-transform": "^2.4.9",
     "rollup": "^4.24.0",
+    "rollup-plugin-delete": "^2.1.0",
     "sdp-transform": "^2.14.2",
     "tslib": "^2.7.0",
     "typedoc": "^0.26.11",

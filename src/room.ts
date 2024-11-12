@@ -19,7 +19,7 @@ class Room {
   readonly url: string;
   readonly id: string;
 
-  session: Session;
+  private session: Session;
   //user
   tokenId?: string;
   userData?: StrDic;
